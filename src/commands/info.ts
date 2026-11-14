@@ -1,18 +1,19 @@
 import path from "node:path";
-import sharp from "sharp";
-import { INPUT_EXTENSIONS, OUTPUT_FORMATS } from "../core/formats.js";
-import { DEFAULT_LIMIT_INPUT_PIXELS, probe } from "../core/process.js";
-import { RESULT_SCHEMA_VERSION } from "../core/report.js";
 import { toPosix } from "../core/paths.js";
+import { RESULT_SCHEMA_VERSION } from "../core/report.js";
+import { INPUT_EXTENSIONS, OUTPUT_FORMATS, sharpNameFor } from "../image/formats.js";
+import { DEFAULT_LIMIT_INPUT_PIXELS } from "../image/options.js";
+import { probe } from "../image/probe.js";
+import { sharp } from "../image/sharp.js";
 import { versions, type Versions } from "../version.js";
 
 export interface ImageInfo {
   schemaVersion: typeof RESULT_SCHEMA_VERSION;
   file: string;
   format: string;
-  /** Định dạng dùng khi `--format keep`, null nếu không giữ được. */
+  /** Output format used for `--format keep`, or null when it cannot be kept. */
   keepAs: string | null;
-  /** Kích thước đã áp EXIF orientation (kích thước người xem thấy). */
+  /** Size after EXIF orientation (what a viewer sees). */
   width: number;
   height: number;
   storedWidth: number;
@@ -24,7 +25,7 @@ export interface ImageInfo {
   bytes: number;
 }
 
-/** Đọc metadata một ảnh, không ghi gì. Ném ImgfitError nếu ảnh không hợp lệ/không được hỗ trợ. */
+/** Reads one image's metadata; writes nothing. Throws ImgfitError for invalid/unsupported images. */
 export async function info(file: string, opts: { cwd?: string; limitInputPixels?: number } = {}): Promise<ImageInfo> {
   const cwd = path.resolve(opts.cwd ?? process.cwd());
   const abs = path.resolve(cwd, file);
@@ -49,26 +50,23 @@ export async function info(file: string, opts: { cwd?: string; limitInputPixels?
 export interface Capabilities {
   schemaVersion: typeof RESULT_SCHEMA_VERSION;
   versions: Versions;
-  /** Định dạng imgfit nhận làm input (theo nội dung file). */
+  /** Input formats imgfit accepts (by content). */
   input: string[];
-  /** Đuôi file được quét khi input là thư mục. */
+  /** Extensions scanned when an input is a directory. */
   inputExtensions: string[];
-  /** Định dạng imgfit xuất được trên bản build hiện tại. */
+  /** Output formats available in this build. */
   output: string[];
   modes: string[];
   positions: string[];
-  /** Khả năng thô của libvips/sharp trên máy này (để chẩn đoán). */
+  /** Raw libvips/sharp support on this machine (for diagnostics). */
   sharpFormats: Record<string, { input: boolean; output: boolean }>;
 }
 
 export function capabilities(): Capabilities {
   const f = sharp.format as unknown as Record<string, { input: { file: boolean }; output: { file: boolean } }>;
-  const sharpFormats = Object.fromEntries(
-    Object.entries(f).map(([k, v]) => [k, { input: Boolean(v.input?.file), output: Boolean(v.output?.file) }]),
-  );
-  const canWrite = (name: string) => sharpFormats[name]?.output ?? false;
+  const sharpFormats = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, { input: Boolean(v.input?.file), output: Boolean(v.output?.file) }]));
   const canRead = (name: string) => sharpFormats[name]?.input ?? false;
-  const output = OUTPUT_FORMATS.filter((fmt) => canWrite(fmt === "jpg" ? "jpeg" : fmt === "avif" ? "heif" : fmt));
+  const output = OUTPUT_FORMATS.filter((fmt) => sharpFormats[sharpNameFor(fmt)]?.output ?? false);
   const input = ["jpeg", "png", "webp", "tiff", "gif"].filter(canRead);
   if (canRead("heif")) input.push("avif");
   return {

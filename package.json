@@ -24,14 +24,21 @@
     "README.md"
   ],
   "engines": {
-    "node": ">=20.3.0"
+    "node": ">=20.15.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run build:core && npm run build:ui",
+    "build:core": "tsc -p tsconfig.build.json",
+    "build:ui": "vite build --config ui/vite.config.ts",
+    "dev:ui": "vite --config ui/vite.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && vue-tsc -p ui/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bench": "npm run build && node scripts/bench.mjs"
+    "bench": "npm run build && node scripts/bench.mjs",
+    "pretest": "npm run build:ui",
+    "smoke": "node scripts/smoke-package.mjs",
+    "portable": "node scripts/build-portable.mjs",
+    "docker": "docker build -t imgfit:0.1.0 ."
   },
   "keywords": [
     "image",
@@ -42,14 +49,24 @@
     "assets"
   ],
   "dependencies": {
+    "ajv": "^8.20.0",
     "commander": "^15.1.0",
+    "express": "^5.3.0",
     "fast-glob": "^3.3.3",
+    "multer": "^2.5.0",
     "p-limit": "^7.3.3",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
     "@types/node": "^26.6.6",
-    "typescript": "^7.0.2",
-    "vitest": "^5.1.0"
+    "@vitejs/plugin-vue": "^6.0.11",
+    "postject": "^1.0.0-alpha.6",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0",
+    "vue": "^3.5.45",
+    "vue-tsc": "^3.3.14"
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Toán hình học thuần (không I/O) cho resize/crop. Mọi tọa độ tính trên ảnh ĐÃ auto-orient theo EXIF.
+ * Pure resize/crop geometry (no I/O). All coordinates refer to the image AFTER EXIF auto-orientation.
  */
 
 export type Mode = "fit" | "cover" | "pad";
@@ -21,7 +21,7 @@ export interface Point {
   y: number;
 }
 
-/** EXIF orientation 5–8 xoay 90°/270° nên đổi chỗ rộng/cao. */
+/** EXIF orientations 5–8 rotate by 90°/270°, so width and height swap. */
 export function orientedSize(width: number, height: number, orientation: number | undefined): Size {
   if (orientation !== undefined && orientation >= 5 && orientation <= 8) {
     return { width: height, height: width };
@@ -30,9 +30,9 @@ export function orientedSize(width: number, height: number, orientation: number 
 }
 
 /**
- * Ảnh nguồn có "nhỏ hơn target" theo nghĩa của từng mode không (tức là cần phóng to mới đạt target):
- * - fit/pad: cả hai chiều đều nhỏ hơn khung (scale = min(W/w, H/h) > 1)
- * - cover: chỉ cần một chiều nhỏ hơn khung (scale = max(W/w, H/h) > 1)
+ * Whether reaching the target would require enlarging the source, per mode:
+ * - fit/pad: both sides are smaller than the box (scale = min(W/w, H/h) > 1)
+ * - cover: either side is smaller (scale = max(W/w, H/h) > 1)
  */
 export function isSmallInput(src: Size, target: Size, mode: Mode): boolean {
   const sx = target.width / src.width;
@@ -40,7 +40,7 @@ export function isSmallInput(src: Size, target: Size, mode: Mode): boolean {
   return mode === "cover" ? Math.max(sx, sy) > 1 : Math.min(sx, sy) > 1;
 }
 
-/** Kích thước vừa khung, giữ tỷ lệ. Không phóng to khi allowUpscale=false. Luôn >= 1px. */
+/** Largest size that fits in `box` keeping the aspect ratio. Never enlarges unless allowed; never below 1px. */
 export function fitInside(src: Size, box: Size, allowUpscale: boolean): Size {
   let scale = Math.min(box.width / src.width, box.height / src.height);
   if (!allowUpscale) scale = Math.min(scale, 1);
@@ -51,8 +51,8 @@ export function fitInside(src: Size, box: Size, allowUpscale: boolean): Size {
 }
 
 /**
- * Hình chữ nhật lớn nhất trong ảnh nguồn có đúng tỷ lệ target, đặt sao cho focal point
- * nằm giữa khung nhiều nhất có thể, rồi clamp trong biên ảnh.
+ * Largest rectangle inside the source with the target's aspect ratio, centred on the focal point
+ * as far as possible, then clamped to the image bounds.
  */
 export function aspectCropRect(src: Size, target: Size, focal: Point): Rect {
   const ratio = target.width / target.height;
@@ -75,7 +75,7 @@ export function aspectCropRect(src: Size, target: Size, focal: Point): Rect {
   return { left, top, width, height };
 }
 
-/** Focal point tương ứng với position có sẵn (dùng cho crop thủ công). */
+/** Focal point equivalent of a named position (used for manual cropping). */
 export function focalForPosition(position: CropPosition, focal?: Point): Point {
   switch (position) {
     case "top":
@@ -87,7 +87,7 @@ export function focalForPosition(position: CropPosition, focal?: Point): Point {
   }
 }
 
-/** Vị trí đặt ảnh con ở giữa canvas khi pad. */
+/** Padding needed to centre `inner` on `canvas`; the odd pixel goes to the right/bottom. */
 export function centerOffsets(inner: Size, canvas: Size): { top: number; bottom: number; left: number; right: number } {
   const dx = Math.max(0, canvas.width - inner.width);
   const dy = Math.max(0, canvas.height - inner.height);

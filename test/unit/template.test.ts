@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ImgfitError } from "../../src/core/errors.js";
-import { parseFormatOption } from "../../src/core/formats.js";
+import { parseFormatOption } from "../../src/image/formats.js";
 import { collisionKey, isInside, sanitizeSegment } from "../../src/core/paths.js";
-import { parseColor } from "../../src/core/process.js";
+import { parseColor } from "../../src/image/options.js";
 import { renderTemplate, validateTemplate } from "../../src/core/template.js";
 
 const vars = { name: "photo", ext: "jpg", w: 256, h: 128, dir: "" };

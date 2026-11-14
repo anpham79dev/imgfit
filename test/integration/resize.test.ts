@@ -58,8 +58,8 @@ describe("resize: hình học", () => {
   });
 
   it("áp EXIF orientation trước khi resize (orientation 6)", async () => {
-    // Lưu 200×100: trái đỏ, phải xanh. Orientation 6 = xoay 90° theo chiều kim đồng hồ khi hiển thị
-    // → hiển thị 100×200: trên đỏ, dưới xanh.
+    // Stored 200×100: red left, blue right. Orientation 6 = rotate 90° clockwise for display
+    // → displayed 100×200: red top, blue bottom.
     await halves(raw("rot.jpg"), 200, 100, "#ff0000", "#0000ff", 6);
     const r = await resize(base({ width: 100, height: 200, format: "png" }));
     expect(r.files[0]?.inputPx).toEqual([100, 200]);
@@ -77,7 +77,7 @@ describe("resize: hình học", () => {
   });
 
   it("cover + focal point giữ đúng vùng", async () => {
-    // 400×100 xanh dương, ô xanh lá ở x=300..400
+    // 400×100 blue with a green square at x=300..400
     await sharp({ create: { width: 400, height: 100, channels: 3, background: "#0000ff" } })
       .composite([{ input: { create: { width: 100, height: 100, channels: 3, background: "#00ff00" } }, left: 300, top: 0 }])
       .png()
@@ -186,7 +186,8 @@ describe("resize: input lỗi", () => {
     expect(code("text.webp")).toBe("E_INPUT_UNSUPPORTED");
     expect(code("anim.png")).toBe("E_INPUT_ANIMATED");
     expect(code("anim.gif")).toBe("E_INPUT_ANIMATED");
-    expect(["E_INPUT_CORRUPT", "E_INPUT_UNSUPPORTED"]).toContain(code("truncated.jpg"));
+    const trunc = r.files.find((f) => f.file.endsWith("truncated.jpg"))?.errors;
+    expect(["E_INPUT_CORRUPT", "E_INPUT_UNSUPPORTED"], JSON.stringify(trunc)).toContain(code("truncated.jpg"));
     expect(await listFiles(path.join(dir, "out"))).toEqual(["good.jpg"]);
   });
 

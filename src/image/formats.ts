@@ -1,22 +1,25 @@
-import { ImgfitError } from "./errors.js";
+import { ImgfitError } from "../core/errors.js";
 
 export const OUTPUT_FORMATS = ["jpg", "png", "webp", "avif"] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 export type FormatOption = OutputFormat | "keep";
 
-/** Đuôi file được quét khi input là thư mục. */
+/** File extensions scanned when an input is a directory. */
 export const INPUT_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "tif", "tiff", "gif"] as const;
 
+/** Accepted extensions per output format (the first one is canonical). */
+export const EXTENSIONS_FOR: Record<OutputFormat, string[]> = { jpg: [".jpg", ".jpeg"], png: [".png"], webp: [".webp"], avif: [".avif"] };
+
 /**
- * Định dạng input được nhận (theo `metadata().format` của sharp, tức là theo nội dung file chứ không theo đuôi).
- * `heif` chỉ được nhận khi nén AV1 (tức AVIF); HEIC chưa được hỗ trợ ở v1.
+ * Accepted input formats, as reported by sharp's `metadata().format` (i.e. by content, not extension).
+ * `heif` is only accepted when AV1-compressed (AVIF); HEIC is not supported.
  */
 const ACCEPTED_INPUT = new Set(["jpeg", "png", "webp", "tiff", "gif", "heif"]);
 
 export interface DetectedFormat {
-  /** Tên định dạng thân thiện: jpeg | png | webp | tiff | gif | avif */
+  /** Friendly name: jpeg | png | webp | tiff | gif | avif */
   name: string;
-  /** Định dạng output tương ứng khi `format: keep`, hoặc null nếu không giữ được. */
+  /** Output format used for `format: keep`, or null when it cannot be kept. */
   keepAs: OutputFormat | null;
 }
 
@@ -43,7 +46,7 @@ export function detectInputFormat(sharpFormat: string | undefined, compression: 
     case "webp":
       return { name: "webp", keepAs: "webp" };
     default:
-      // tiff, gif: đọc được nhưng không có encoder output tương ứng trong v1
+      // tiff, gif: readable, but there is no matching output encoder
       return { name: sharpFormat, keepAs: null };
   }
 }
@@ -68,7 +71,7 @@ export function resolveOutputFormat(option: FormatOption, detected: DetectedForm
   return detected.keepAs;
 }
 
-/** Tên định dạng mà sharp báo lại khi đọc file output, để kiểm tra bytes khớp với đuôi. */
+/** Format name sharp reports when reading an output file back (to verify bytes match the extension). */
 export function sharpNameFor(format: OutputFormat): string {
   switch (format) {
     case "jpg":
@@ -78,6 +81,11 @@ export function sharpNameFor(format: OutputFormat): string {
     default:
       return format;
   }
+}
+
+/** Maps sharp metadata back to an output format, or null if it is not one we produce. */
+export function outputFormatOf(sharpFormat: string | undefined, compression: string | undefined): OutputFormat | null {
+  return OUTPUT_FORMATS.find((f) => sharpNameFor(f) === sharpFormat && (f !== "avif" || compression === "av1")) ?? null;
 }
 
 export function supportsAlpha(format: OutputFormat): boolean {

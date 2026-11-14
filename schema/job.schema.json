@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://imgfit.local/schema/job.schema.json",
+  "title": "imgfit exec job",
+  "description": "Input của `imgfit exec --stdin` (hoặc `--file job.json`). Mỗi job chỉ rõ input, output và preset (từ config) hoặc options inline.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobs"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "config": { "type": "string", "description": "imgfit.json để lấy preset theo tên (tương đối theo cwd)." },
+    "root": { "type": "string", "description": "Mọi output phải nằm trong thư mục này (mặc định: cwd)." },
+    "onConflict": { "enum": ["error", "replace", "skip"], "default": "error" },
+    "concurrency": { "type": "integer", "minimum": 1, "maximum": 64, "default": 4 },
+    "dryRun": { "type": "boolean", "default": false },
+    "jobs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input", "output"],
+        "properties": {
+          "input": { "type": "string", "minLength": 1 },
+          "output": { "type": "string", "minLength": 1, "description": "Đường dẫn file output (đuôi phải khớp định dạng)." },
+          "preset": { "type": "string", "minLength": 1 },
+          "size": {
+            "type": "array",
+            "prefixItems": [
+              { "type": "integer", "minimum": 1, "maximum": 65535 },
+              { "type": "integer", "minimum": 1, "maximum": 65535 }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "mode": { "enum": ["fit", "cover", "pad"] },
+          "format": { "enum": ["keep", "jpg", "png", "webp", "avif"] },
+          "quality": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "position": { "enum": ["center", "top", "attention", "focal"] },
+          "focalPoint": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y"],
+            "properties": { "x": { "type": "number", "minimum": 0, "maximum": 1 }, "y": { "type": "number", "minimum": 0, "maximum": 1 } }
+          },
+          "background": { "type": "string" },
+          "smallInput": { "enum": ["error", "keep", "pad"] },
+          "upscale": { "type": "boolean" },
+          "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },
+          "stripMetadata": { "type": "boolean" },
+          "png": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "compressionLevel": { "type": "integer", "minimum": 0, "maximum": 9 }, "palette": { "type": "boolean" } }
+          },
+          "blockMultiple": { "type": "integer", "minimum": 1, "maximum": 64 }
+        },
+        "anyOf": [{ "required": ["preset"] }, { "required": ["size"] }]
+      }
+    }
+  }
+}

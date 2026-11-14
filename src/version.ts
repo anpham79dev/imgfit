@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
-import sharp from "sharp";
+import { sharp } from "./image/sharp.js";
 
-// Cùng một đường dẫn tương đối đúng cho cả src/version.ts (test) và dist/version.js (bản build).
+// Same relative path works for src/version.ts (tests) and dist/version.js (build).
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { name: string; version: string };
 
 export const TOOL_NAME = pkg.name;

@@ -3,34 +3,72 @@
   "$id": "https://imgfit.local/schema/result.schema.json",
   "title": "imgfit result",
   "description": "Output của `imgfit <command> --json`. Thành công: Report. Lỗi tham số/môi trường trước khi chạy: ErrorDocument (status = \"error\").",
-  "oneOf": [{ "$ref": "#/$defs/Report" }, { "$ref": "#/$defs/ErrorDocument" }],
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Report"
+    },
+    {
+      "$ref": "#/$defs/ErrorDocument"
+    }
+  ],
   "$defs": {
     "Tool": {
       "type": "object",
-      "required": ["name", "version", "sharp", "libvips"],
+      "required": [
+        "name",
+        "version",
+        "sharp",
+        "libvips"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "version": { "type": "string" },
-        "sharp": { "type": "string" },
-        "libvips": { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "sharp": {
+          "type": "string"
+        },
+        "libvips": {
+          "type": "string"
+        }
       }
     },
     "Issue": {
       "type": "object",
-      "required": ["code", "message"],
+      "required": [
+        "code",
+        "message"
+      ],
       "properties": {
         "code": {
           "type": "string",
           "pattern": "^[EW]_[A-Z_]+$",
           "description": "Mã ổn định. E_* = lỗi, W_* = cảnh báo. Danh sách đầy đủ trong README."
         },
-        "message": { "type": "string", "description": "Thông điệp cho người đọc; có thể đổi giữa các bản, đừng parse." },
-        "details": { "type": "object" }
+        "message": {
+          "type": "string",
+          "description": "Thông điệp cho người đọc; có thể đổi giữa các bản, đừng parse."
+        },
+        "details": {
+          "type": "object"
+        }
       }
     },
     "Pixels": {
-      "type": ["array", "null"],
-      "prefixItems": [{ "type": "integer" }, { "type": "integer" }],
+      "type": [
+        "array",
+        "null"
+      ],
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
       "minItems": 2,
       "maxItems": 2,
       "description": "[width, height] sau khi áp EXIF orientation."
@@ -41,6 +79,8 @@
         "file",
         "destination",
         "status",
+        "action",
+        "rule",
         "preset",
         "format",
         "inputBytes",
@@ -53,66 +93,282 @@
         "errors"
       ],
       "properties": {
-        "file": { "type": "string", "description": "Đường dẫn input, dạng posix, tương đối theo cwd nếu nằm trong cwd." },
-        "destination": { "type": ["string", "null"] },
-        "status": { "enum": ["planned", "created", "replaced", "skipped", "failed", "cancelled"] },
-        "preset": { "type": ["string", "null"] },
-        "format": { "enum": ["jpg", "png", "webp", "avif", null] },
-        "inputBytes": { "type": ["integer", "null"] },
-        "outputBytes": { "type": ["integer", "null"], "description": "null = chưa biết (dry-run, lỗi, skip)." },
-        "inputPx": { "$ref": "#/$defs/Pixels" },
-        "outputPx": { "$ref": "#/$defs/Pixels" },
-        "elapsedMs": { "type": "number" },
-        "fingerprint": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
-        "warnings": { "type": "array", "items": { "$ref": "#/$defs/Issue" } },
-        "errors": { "type": "array", "items": { "$ref": "#/$defs/Issue" } }
+        "file": {
+          "type": "string",
+          "description": "Đường dẫn input, dạng posix, tương đối theo cwd nếu nằm trong cwd."
+        },
+        "destination": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "planned",
+            "created",
+            "replaced",
+            "unchanged",
+            "adopted",
+            "skipped",
+            "failed",
+            "cancelled",
+            "pass",
+            "warn",
+            "fail"
+          ],
+          "description": "planned: dry-run · created/replaced: đã ghi · unchanged: run thấy không đổi · adopted: run --adopt · skipped · failed · cancelled · pass/warn/fail: kết quả check"
+        },
+        "action": {
+          "enum": [
+            "create",
+            "replace",
+            "adopt",
+            null
+          ],
+          "description": "Việc sẽ/đã làm với output (rõ nhất khi dry-run)."
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preset": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "format": {
+          "enum": [
+            "jpg",
+            "png",
+            "webp",
+            "avif",
+            null
+          ]
+        },
+        "inputBytes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "outputBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "null = chưa biết (dry-run, lỗi, skip)."
+        },
+        "inputPx": {
+          "$ref": "#/$defs/Pixels"
+        },
+        "outputPx": {
+          "$ref": "#/$defs/Pixels"
+        },
+        "elapsedMs": {
+          "type": "number"
+        },
+        "fingerprint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Issue"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Issue"
+          }
+        }
       }
     },
     "Summary": {
       "type": "object",
-      "required": ["total", "processed", "created", "replaced", "planned", "skipped", "failed", "cancelled", "inputBytes", "outputBytes", "bytesSaved"],
+      "required": [
+        "total",
+        "processed",
+        "created",
+        "replaced",
+        "unchanged",
+        "adopted",
+        "planned",
+        "skipped",
+        "failed",
+        "cancelled",
+        "pass",
+        "warn",
+        "fail",
+        "inputBytes",
+        "outputBytes",
+        "bytesSaved"
+      ],
       "properties": {
-        "total": { "type": "integer" },
-        "processed": { "type": "integer", "description": "created + replaced" },
-        "created": { "type": "integer" },
-        "replaced": { "type": "integer" },
-        "planned": { "type": "integer" },
-        "skipped": { "type": "integer" },
-        "failed": { "type": "integer" },
-        "cancelled": { "type": "integer" },
-        "inputBytes": { "type": "integer" },
-        "outputBytes": { "type": "integer" },
-        "bytesSaved": { "type": "integer", "description": "inputBytes - outputBytes trên các file đã ghi; có thể âm." }
+        "total": {
+          "type": "integer"
+        },
+        "processed": {
+          "type": "integer",
+          "description": "created + replaced"
+        },
+        "created": {
+          "type": "integer"
+        },
+        "replaced": {
+          "type": "integer"
+        },
+        "planned": {
+          "type": "integer"
+        },
+        "skipped": {
+          "type": "integer"
+        },
+        "failed": {
+          "type": "integer"
+        },
+        "cancelled": {
+          "type": "integer"
+        },
+        "inputBytes": {
+          "type": "integer"
+        },
+        "outputBytes": {
+          "type": "integer"
+        },
+        "bytesSaved": {
+          "type": "integer",
+          "description": "inputBytes - outputBytes trên các file đã ghi; có thể âm."
+        },
+        "unchanged": {
+          "type": "integer"
+        },
+        "adopted": {
+          "type": "integer"
+        },
+        "pass": {
+          "type": "integer"
+        },
+        "warn": {
+          "type": "integer"
+        },
+        "fail": {
+          "type": "integer"
+        }
       }
     },
     "Report": {
       "type": "object",
-      "required": ["schemaVersion", "tool", "command", "status", "dryRun", "startedAt", "elapsedMs", "summary", "files", "errors"],
+      "required": [
+        "schemaVersion",
+        "tool",
+        "command",
+        "status",
+        "dryRun",
+        "startedAt",
+        "elapsedMs",
+        "summary",
+        "files",
+        "errors",
+        "warnings"
+      ],
       "properties": {
-        "schemaVersion": { "const": 1 },
-        "tool": { "$ref": "#/$defs/Tool" },
-        "command": { "type": "string" },
+        "schemaVersion": {
+          "const": 1
+        },
+        "tool": {
+          "$ref": "#/$defs/Tool"
+        },
+        "command": {
+          "enum": [
+            "resize",
+            "run",
+            "adopt",
+            "check",
+            "exec"
+          ]
+        },
         "status": {
-          "enum": ["ok", "failed", "aborted", "cancelled"],
+          "enum": [
+            "ok",
+            "failed",
+            "aborted",
+            "cancelled"
+          ],
           "description": "ok: không lỗi. failed: có file lỗi. aborted: dừng trước khi ghi (vd. trùng đích). cancelled: bị Ctrl+C."
         },
-        "dryRun": { "type": "boolean" },
-        "startedAt": { "type": "string", "format": "date-time" },
-        "elapsedMs": { "type": "number" },
-        "summary": { "$ref": "#/$defs/Summary" },
-        "files": { "type": "array", "items": { "$ref": "#/$defs/FileResult" } },
-        "errors": { "type": "array", "items": { "$ref": "#/$defs/Issue" }, "description": "Lỗi cấp batch." }
+        "dryRun": {
+          "type": "boolean"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "elapsedMs": {
+          "type": "number"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FileResult"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Issue"
+          },
+          "description": "Lỗi cấp batch."
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Issue"
+          },
+          "description": "Cảnh báo cấp batch (output mồ côi, lock cũ, version lệch…)."
+        }
       }
     },
     "ErrorDocument": {
       "type": "object",
-      "required": ["schemaVersion", "tool", "command", "status", "errors"],
+      "required": [
+        "schemaVersion",
+        "tool",
+        "command",
+        "status",
+        "errors"
+      ],
       "properties": {
-        "schemaVersion": { "const": 1 },
-        "tool": { "$ref": "#/$defs/Tool" },
-        "command": { "type": "string" },
-        "status": { "const": "error" },
-        "errors": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Issue" } }
+        "schemaVersion": {
+          "const": 1
+        },
+        "tool": {
+          "$ref": "#/$defs/Tool"
+        },
+        "command": {
+          "type": "string"
+        },
+        "status": {
+          "const": "error"
+        },
+        "errors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Issue"
+          }
+        }
       }
     }
   }

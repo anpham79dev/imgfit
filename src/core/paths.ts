@@ -3,14 +3,14 @@ import path from "node:path";
 import { ImgfitError } from "./errors.js";
 
 const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³])(\..*)?$/i;
-// Ký tự cấm trên Windows + ký tự điều khiển. Áp cho mọi OS để output portable.
+// Characters forbidden on Windows + control characters. Applied on every OS so outputs stay portable.
 // eslint-disable-next-line no-control-regex
 const FORBIDDEN_CHARS = /[<>:"/\\|?*\u0000-\u001f]/g;
 const MAX_SEGMENT = 200;
 
 /**
- * Làm sạch một segment tên file/thư mục để dùng được trên Windows, macOS, Linux:
- * Unicode NFC, bỏ ký tự cấm, bỏ dấu chấm/khoảng trắng cuối, tránh tên reserved (CON, NUL…).
+ * Sanitises one file/directory name segment so it works on Windows, macOS and Linux:
+ * Unicode NFC, forbidden characters replaced, trailing dots/spaces removed, reserved names (CON, NUL…) avoided.
  */
 export function sanitizeSegment(input: string): string {
   let s = input.normalize("NFC").replace(FORBIDDEN_CHARS, "_");
@@ -23,8 +23,8 @@ export function sanitizeSegment(input: string): string {
 }
 
 /**
- * Khóa so sánh trùng đích. Luôn không phân biệt hoa/thường + NFC, kể cả trên Linux,
- * để output commit được lên repo dùng chung với Windows/macOS.
+ * Key used to detect destination collisions. Always case-insensitive + NFC, even on Linux,
+ * so outputs can be committed to a repo shared with Windows/macOS.
  */
 export function collisionKey(p: string): string {
   return toPosix(p).normalize("NFC").toLowerCase();
@@ -34,13 +34,13 @@ export function toPosix(p: string): string {
   return p.split(path.sep).join("/");
 }
 
-/** true nếu `child` nằm trong (hoặc bằng) `parent`; cả hai phải là đường dẫn tuyệt đối đã resolve. */
+/** True if `child` is inside (or equal to) `parent`; both must be resolved absolute paths. */
 export function isInside(parent: string, child: string): boolean {
   const rel = path.relative(parent, child);
   return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
 }
 
-/** Cha gần nhất đang tồn tại của một đường dẫn (để realpath khi đích chưa được tạo). */
+/** Nearest existing ancestor of a path (to realpath a destination that does not exist yet). */
 async function nearestExisting(p: string): Promise<string> {
   let current = p;
   for (;;) {
@@ -56,8 +56,8 @@ async function nearestExisting(p: string): Promise<string> {
 }
 
 /**
- * Kiểm tra `target` nằm trong `root` sau khi giải quyết `..` VÀ symlink/junction.
- * Gọi lại ngay trước thao tác ghi (giảm cửa sổ TOCTOU; không loại bỏ hoàn toàn được trên Node).
+ * Asserts that `target` stays inside `root` after resolving `..` AND symlinks/junctions.
+ * Called again right before writing (narrows the TOCTOU window; Node cannot eliminate it entirely).
  */
 export async function assertSafeDestination(root: string, target: string): Promise<void> {
   const absRoot = path.resolve(root);
@@ -88,6 +88,6 @@ export async function assertSafeDestination(root: string, target: string): Promi
     }
   } catch (err) {
     if (err instanceof ImgfitError) throw err;
-    // ENOENT: đích chưa tồn tại — bình thường
+    // ENOENT: the destination does not exist yet — expected
   }
 }

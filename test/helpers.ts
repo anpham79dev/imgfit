@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { crc32 } from "node:zlib";
 import sharp from "sharp";
-import { main } from "../src/cli.js";
+import { main } from "../src/cli/index.js";
 
 export async function tempDir(): Promise<{ dir: string; cleanup: () => Promise<void> }> {
   const dir = await mkdtemp(path.join(os.tmpdir(), "imgfit-test-"));
@@ -16,7 +16,7 @@ export async function solid(file: string, width: number, height: number, color: 
   await img.toFile(file);
 }
 
-/** Ảnh 2 nửa màu: trái `left`, phải `right`. Tùy chọn ghi EXIF orientation. */
+/** Two-colour image: `left` half and `right` half, optionally with an EXIF orientation. */
 export async function halves(file: string, width: number, height: number, left: string, right: string, orientation?: number): Promise<void> {
   const half = Math.floor(width / 2);
   let img = sharp({ create: { width, height, channels: 3, background: right } }).composite([
@@ -24,7 +24,7 @@ export async function halves(file: string, width: number, height: number, left: 
   ]);
   img = img.png();
   if (orientation) img = img.withMetadata({ orientation });
-  // JPG để orientation EXIF được giữ chắc chắn
+  // JPEG so the EXIF orientation is reliably preserved
   await img.jpeg({ quality: 95 }).toFile(file);
 }
 
@@ -34,7 +34,7 @@ export async function rgba(file: string, width: number, height: number, alpha: n
     .toFile(file);
 }
 
-/** Màu pixel tại (x, y) của ảnh đã lưu. */
+/** Pixel colour at (x, y) of a saved image. */
 export async function pixel(file: string, x: number, y: number): Promise<{ r: number; g: number; b: number; a: number }> {
   const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const i = (y * info.width + x) * 4;
@@ -45,7 +45,7 @@ export function near(actual: { r: number; g: number; b: number }, expected: [num
   return Math.abs(actual.r - expected[0]) <= tolerance && Math.abs(actual.g - expected[1]) <= tolerance && Math.abs(actual.b - expected[2]) <= tolerance;
 }
 
-/** Biến một PNG thường thành APNG giả (chèn chunk acTL sau IHDR) để test việc từ chối ảnh động. */
+/** Turns a plain PNG into a fake APNG (acTL chunk after IHDR) to test animated-image rejection. */
 export async function fakeApng(file: string): Promise<void> {
   const png = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#000" } })
     .png()

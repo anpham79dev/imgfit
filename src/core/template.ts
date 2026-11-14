@@ -1,22 +1,25 @@
 import { ImgfitError } from "./errors.js";
 import { sanitizeSegment } from "./paths.js";
 
-/** Placeholder được phép trong template tên output. Danh sách này là hợp đồng công khai. */
-export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir"] as const;
+/** Placeholders allowed in output name templates. This list is a public contract. */
+export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir", "id"] as const;
 export type Placeholder = (typeof PLACEHOLDERS)[number];
 
 export interface TemplateVars {
-  /** basename nguồn không đuôi (chưa sanitize) */
+  /** source basename without extension (not yet sanitised) */
   name: string;
   ext: string;
   w: number;
   h: number;
   preset?: string;
-  /** thư mục con tương đối (dạng posix, có thể rỗng) */
+  /** relative sub-directory (posix, may be empty) */
   dir: string;
+  /** ID looked up from the rule's names file (imgfit.names.json) */
+  id?: string;
 }
 
 const TOKEN = /\{([^{}]*)\}/g;
+const DIR_MARK = "\u0000DIR\u0000";
 
 export function validateTemplate(template: string): void {
   if (template.trim() === "") throw new ImgfitError("E_USAGE", "Template tên output rỗng");
@@ -36,32 +39,34 @@ export function validateTemplate(template: string): void {
   }
 }
 
+function placeholderValue(key: Placeholder, vars: TemplateVars): string {
+  switch (key) {
+    case "name":
+      return sanitizeSegment(vars.name).replace(/\//g, "_");
+    case "ext":
+      return vars.ext;
+    case "w":
+      return String(vars.w);
+    case "h":
+      return String(vars.h);
+    case "preset":
+      if (!vars.preset) throw new ImgfitError("E_USAGE", "Template dùng {preset} nhưng không có preset");
+      return sanitizeSegment(vars.preset);
+    case "dir":
+      return DIR_MARK; // expanded per segment below
+    case "id":
+      if (vars.id === undefined) throw new ImgfitError("E_NAME_MISSING", `Template dùng {id} nhưng không có ID cho "${vars.name}"`);
+      return sanitizeSegment(vars.id);
+  }
+}
+
 /**
- * Render template thành đường dẫn tương đối dạng posix. Mỗi segment đều được sanitize;
- * `{dir}` là placeholder duy nhất được sinh ra dấu "/", và từng phần của nó cũng được sanitize.
+ * Renders a template into a relative posix path. Every segment is sanitised;
+ * `{dir}` is the only placeholder that may produce "/", and each of its parts is sanitised too.
  */
 export function renderTemplate(template: string, vars: TemplateVars): string {
   validateTemplate(template);
-  const DIR_MARK = "\u0000DIR\u0000";
-  const rendered = template.replace(TOKEN, (_all, key: string) => {
-    switch (key as Placeholder) {
-      case "name":
-        return sanitizeSegment(vars.name).replace(/\//g, "_");
-      case "ext":
-        return vars.ext;
-      case "w":
-        return String(vars.w);
-      case "h":
-        return String(vars.h);
-      case "preset":
-        if (!vars.preset) throw new ImgfitError("E_USAGE", "Template dùng {preset} nhưng không có preset");
-        return sanitizeSegment(vars.preset);
-      case "dir":
-        return DIR_MARK;
-      default:
-        return "";
-    }
-  });
+  const rendered = template.replace(TOKEN, (_all, key: string) => placeholderValue(key as Placeholder, vars));
 
   const dirSegments = vars.dir
     .split("/")

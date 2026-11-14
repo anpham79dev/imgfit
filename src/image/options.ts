@@ -1,0 +1,117 @@
+import { ImgfitError } from "../core/errors.js";
+import type { FormatOption, OutputFormat } from "./formats.js";
+import type { CropPosition, Mode, Point, SmallInputPolicy } from "./geometry.js";
+
+/** Default input pixel limit (≈ 268 MP, same as sharp's default). Guards against decompression bombs. */
+export const DEFAULT_LIMIT_INPUT_PIXELS = 268_402_689;
+
+export const DEFAULT_QUALITY: Record<OutputFormat, number> = { jpg: 85, png: 100, webp: 82, avif: 50 };
+
+/** Everything that determines how one image is transformed. */
+export interface TransformOptions {
+  width: number;
+  height: number;
+  mode: Mode;
+  format: FormatOption;
+  /** 1–100. Defaults per format (jpg 85, webp 82, avif 50). PNG only uses it with palette=true. */
+  quality?: number;
+  /** Default false: never enlarge small inputs. */
+  upscale?: boolean;
+  /** Default depends on mode: fit → keep, cover/pad → error. */
+  smallInput?: SmallInputPolicy;
+  /** Cover only. Default center. */
+  position?: CropPosition;
+  /** Normalised [0,1] coordinates on the auto-oriented image; required when position=focal. */
+  focalPoint?: Point;
+  /** Background for pad and for flattening alpha into JPG. Hex: #rgb, #rrggbb, #rrggbbaa. */
+  background?: string;
+  /** Sharpen sigma (0.3–10). Unset = no sharpening. */
+  sharpen?: number;
+  /** Default true: drop EXIF/XMP/ICC after converting to sRGB. */
+  stripMetadata?: boolean;
+  png?: { compressionLevel?: number; palette?: boolean };
+  limitInputPixels?: number;
+  /**
+   * Size multiple (e.g. 4 for BC/DXT block-compressed textures). fit: rounded DOWN with a warning;
+   * cover/pad: the target must already be a multiple (preset sizes are never changed implicitly).
+   */
+  blockMultiple?: number;
+}
+
+export interface Rgba {
+  r: number;
+  g: number;
+  b: number;
+  alpha: number;
+}
+
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+export function parseColor(value: string): Rgba {
+  const v = value.trim();
+  if (!HEX.test(v)) {
+    throw new ImgfitError("E_USAGE", `Màu nền không hợp lệ "${value}". Dùng hex: #rgb, #rrggbb hoặc #rrggbbaa`);
+  }
+  let hex = v.slice(1);
+  if (hex.length <= 4) hex = [...hex].map((c) => c + c).join("");
+  const n = (i: number) => Number.parseInt(hex.slice(i, i + 2), 16);
+  return { r: n(0), g: n(2), b: n(4), alpha: hex.length === 8 ? Math.round((n(6) / 255) * 1000) / 1000 : 1 };
+}
+
+export function validateTransformOptions(opts: TransformOptions): void {
+  const intIn = (name: string, v: number | undefined, min: number, max: number) => {
+    if (v === undefined) return;
+    if (!Number.isInteger(v) || v < min || v > max) {
+      throw new ImgfitError("E_USAGE", `${name} phải là số nguyên trong [${min}, ${max}], nhận ${v}`);
+    }
+  };
+  intIn("width", opts.width, 1, 65_535);
+  intIn("height", opts.height, 1, 65_535);
+  intIn("quality", opts.quality, 1, 100);
+  intIn("png.compressionLevel", opts.png?.compressionLevel, 0, 9);
+  intIn("blockMultiple", opts.blockMultiple, 1, 64);
+  const bm = opts.blockMultiple ?? 1;
+  if (bm > 1 && opts.mode !== "fit" && (opts.width % bm !== 0 || opts.height % bm !== 0)) {
+    throw new ImgfitError("E_USAGE", `mode ${opts.mode} với blockMultiple=${bm} cần kích thước là bội số của ${bm}, nhận ${opts.width}×${opts.height}`);
+  }
+  if (!["fit", "cover", "pad"].includes(opts.mode)) throw new ImgfitError("E_USAGE", `mode không hợp lệ: ${opts.mode}`);
+  if (opts.smallInput && !["error", "keep", "pad"].includes(opts.smallInput)) {
+    throw new ImgfitError("E_USAGE", `smallInput không hợp lệ: ${opts.smallInput}`);
+  }
+  if (opts.position && !["center", "top", "attention", "focal"].includes(opts.position)) {
+    throw new ImgfitError("E_USAGE", `position không hợp lệ: ${opts.position}`);
+  }
+  if (opts.position === "focal" && !opts.focalPoint) {
+    throw new ImgfitError("E_USAGE", "position=focal cần focalPoint {x, y}");
+  }
+  if (opts.focalPoint) {
+    const { x, y } = opts.focalPoint;
+    if (![x, y].every((v) => Number.isFinite(v) && v >= 0 && v <= 1)) {
+      throw new ImgfitError("E_USAGE", `focalPoint phải nằm trong [0,1], nhận (${x}, ${y})`);
+    }
+  }
+  if (opts.sharpen !== undefined && !(Number.isFinite(opts.sharpen) && opts.sharpen >= 0.3 && opts.sharpen <= 10)) {
+    throw new ImgfitError("E_USAGE", `sharpen (sigma) phải trong [0.3, 10], nhận ${opts.sharpen}`);
+  }
+  if (opts.background !== undefined) parseColor(opts.background);
+}
+
+/** The options that affect output bytes — one input of the fingerprint. */
+export function effectiveOptions(t: TransformOptions, outputFormat: OutputFormat): Record<string, unknown> {
+  return {
+    width: t.width,
+    height: t.height,
+    mode: t.mode,
+    format: outputFormat,
+    quality: t.quality,
+    upscale: t.upscale ?? false,
+    smallInput: t.smallInput,
+    position: t.position,
+    focalPoint: t.focalPoint,
+    background: t.background,
+    sharpen: t.sharpen,
+    stripMetadata: t.stripMetadata ?? true,
+    png: t.png,
+    blockMultiple: t.blockMultiple,
+  };
+}

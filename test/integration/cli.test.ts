@@ -51,7 +51,7 @@ describe("CLI", () => {
     const doc = JSON.parse(r.stdout);
     expect(doc).toMatchObject({ status: "error", errors: [{ code: "E_USAGE" }] });
 
-    expect((await runCli(["resize", "raw", "-s", "10"], dir)).code).toBe(2); // thiếu --output
+    expect((await runCli(["resize", "raw", "-s", "10"], dir)).code).toBe(2); // missing --output
     expect((await runCli(["resize", "raw", "-s", "10", "-o", "o", "--overwrite", "--skip-existing"], dir)).code).toBe(2);
     expect((await runCli(["resize", "raw", "-s", "10", "-o", "o", "--name", "../{name}.{ext}"], dir)).code).toBe(2);
     expect((await runCli(["khong-co-lenh"], dir)).code).toBe(2);

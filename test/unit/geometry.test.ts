@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aspectCropRect, centerOffsets, fitInside, focalForPosition, isSmallInput, orientedSize } from "../../src/core/geometry.js";
+import { aspectCropRect, centerOffsets, fitInside, focalForPosition, isSmallInput, orientedSize } from "../../src/image/geometry.js";
 
 describe("orientedSize", () => {
   it("đổi chiều với orientation 5–8", () => {
