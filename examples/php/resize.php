@@ -1,7 +1,7 @@
 <?php
-// PHP thuần (không framework): gọi CLI imgfit, đọc JSON report.
-//   php examples/php/resize.php <thư-mục-ảnh> <thư-mục-output>
-// Laravel: xem README (Illuminate\Support\Facades\Process).
+// Plain PHP (no framework): calls the imgfit CLI and reads the JSON report.
+//   php examples/php/resize.php <image-dir> <output-dir>
+// Laravel: see the README (Illuminate\Support\Facades\Process).
 
 declare(strict_types=1);
 
@@ -17,7 +17,7 @@ function imgfitBin(): string
 $src = $argv[1] ?? 'raw';
 $dst = $argv[2] ?? 'out';
 
-// Mảng lệnh (PHP 7.4+) → proc_open không đi qua shell.
+// Command as an array (PHP 7.4+) → proc_open does not go through a shell.
 $cmd = [imgfitBin(), 'resize', $src, '-r',
     '--size', '256x256', '--mode', 'cover', '--format', 'webp',
     '--output', $dst, '--name', '{dir}/{name}.{ext}', '--json'];

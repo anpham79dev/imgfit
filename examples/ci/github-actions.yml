@@ -1,0 +1,30 @@
+# Example for a PROJECT THAT USES imgfit (not the CI of the imgfit repo).
+# Copy into the project's .github/workflows/images.yml.
+name: images
+
+on:
+  pull_request:
+    paths: ["**/*.jpg", "**/*.jpeg", "**/*.png", "**/*.webp", "**/*.avif", "imgfit*.json"]
+
+jobs:
+  # CI usually only has the outputs (sources live outside the repo) → output-only:
+  # checks format, size, KB budget and checksums against imgfit.managed.json.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci # imgfit is a pinned devDependency
+      - run: npx imgfit check --check-mode output-only --json --report-json imgfit-report.json
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: imgfit-report, path: imgfit-report.json }
+
+  # If the runner has the sources (e.g. from internal storage): check staleness + reproducibility.
+  # reproducible:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: ./scripts/fetch-image-sources.sh   # sets IMG_SOURCE_DIR
+  #     - run: npm ci && npx imgfit check --check-mode reproducible

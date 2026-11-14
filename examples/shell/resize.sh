@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Shell / CI: resize rồi lọc report bằng jq (nếu có).
-#   bash examples/shell/resize.sh <thư-mục-ảnh> <thư-mục-output>
+# Shell / CI: resize, then filter the report with jq (if installed).
+#   bash examples/shell/resize.sh <image-dir> <output-dir>
 set -euo pipefail
 
 SRC="${1:-raw}"
@@ -20,5 +20,5 @@ else
   echo "Report: imgfit-report.json (cài jq để xem gọn hơn)"
 fi
 
-# 0 = ok, 1 = có file lỗi, 2 = sai tham số, 3 = lỗi môi trường, 130 = bị hủy
+# 0 = ok, 1 = some file failed, 2 = bad arguments, 3 = environment error, 130 = cancelled
 exit "$code"

@@ -1,5 +1,5 @@
-// Node: dùng API import trực tiếp (cùng core với CLI).
-//   node examples/node/resize.mjs <thư-mục-ảnh> <thư-mục-output>
+// Node: uses the importable API (same core as the CLI).
+//   node examples/node/resize.mjs <image-dir> <output-dir>
 import { resize } from "imgfit";
 
 const [input = "raw", output = "out"] = process.argv.slice(2);

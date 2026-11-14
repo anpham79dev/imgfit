@@ -1,0 +1,18 @@
+#!/bin/sh
+# Git pre-commit: checks only staged image outputs/sources (fast); everything if imgfit.json/names/crops changed.
+# Install: cp examples/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# (or point core.hooksPath at the directory containing this file)
+set -e
+BIN="${IMGFIT_BIN:-npx imgfit}"
+
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$files" ] && exit 0
+
+# no image or imgfit config file staged → nothing to do
+echo "$files" | grep -Eiq '\.(jpe?g|png|webp|avif|tiff?|gif)$|(^|/)imgfit\.(json|names\.json|crops\.json|managed\.json)$' || exit 0
+
+# paths go through xargs -0 to preserve spaces/Unicode in file names
+echo "$files" | tr '\n' '\0' | xargs -0 $BIN check --check-mode output-only --quiet || {
+  echo "imgfit check thất bại. Chạy 'imgfit run' rồi git add lại output, hoặc xem chi tiết: imgfit check --verbose" >&2
+  exit 1
+}

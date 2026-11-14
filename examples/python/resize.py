@@ -1,8 +1,8 @@
-"""Python: gọi CLI imgfit, đọc JSON report. Không cần thư viện ngoài.
+"""Python: calls the imgfit CLI and reads the JSON report. No third-party packages needed.
 
-    python examples/python/resize.py <thư-mục-ảnh> <thư-mục-output>
+    python examples/python/resize.py <image-dir> <output-dir>
 
-Tìm binary theo thứ tự: biến môi trường IMGFIT_BIN, rồi `imgfit` trên PATH.
+Binary lookup order: the IMGFIT_BIN environment variable, then `imgfit` on PATH.
 """
 
 import json
@@ -20,30 +20,30 @@ def imgfit_bin() -> str:
 
 
 def resize(input_dir: str, output_dir: str) -> dict:
-    # Truyền MẢNG tham số, không qua shell → không lo quoting/injection.
+    # Pass an argument LIST, no shell → no quoting/injection issues.
     proc = subprocess.run(
         [imgfit_bin(), "resize", input_dir, "-r",
          "--size", "256x256", "--mode", "cover", "--format", "webp",
          "--output", output_dir, "--name", "{dir}/{name}.{ext}", "--json"],
         capture_output=True, text=True, encoding="utf-8",
     )
-    # stdout luôn là JSON khi có --json, kể cả khi lỗi (exit != 0)
+    # with --json stdout is always JSON, even on failure (exit != 0)
     report = json.loads(proc.stdout)
     report["_exit"] = proc.returncode
     return report
 
 
 if __name__ == "__main__":
-    # Message của imgfit là UTF-8 (tiếng Việt); console Windows cũ có thể dùng cp1252.
+    # imgfit messages are UTF-8 (Vietnamese); legacy Windows consoles may use cp1252.
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
 
-    src =sys.argv[1] if len(sys.argv) > 1 else "raw"
+    src = sys.argv[1] if len(sys.argv) > 1 else "raw"
     dst = sys.argv[2] if len(sys.argv) > 2 else "out"
     report = resize(src, dst)
 
-    if report["status"] == "error":  # sai tham số / không tìm thấy input (exit 2) hoặc lỗi môi trường (exit 3)
+    if report["status"] == "error":  # bad arguments / input not found (exit 2) or environment error (exit 3)
         for e in report["errors"]:
             print(f"[{e['code']}] {e['message']}", file=sys.stderr)
         sys.exit(report["_exit"])
