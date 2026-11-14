@@ -1,8 +1,8 @@
 # IMGFIT — Kế hoạch kỹ thuật (sẵn sàng triển khai)
 
 > **Ngày cập nhật:** 14/11/2026  
-> **Trạng thái:** Đợt 1 đã triển khai (v0.1.0, xem README); Đợt 2–6 chưa làm. PoC binary độc lập chưa làm.  
-> **Mục tiêu:** Một công cụ **độc lập, không gắn với dự án, ngôn ngữ hay framework nào** để tối ưu, chuẩn hóa và kiểm tra asset ảnh trước khi đưa vào repository. Mọi dự án — Node, Python, PHP/Laravel, Go, Rust, C#/Unity, shell/CI… — dùng chung qua **CLI có hợp đồng JSON ổn định**; Node có thêm API import trực tiếp; kèm web UI chạy cục bộ.  
+> **Trạng thái:** Đợt 1–5 đã triển khai, Đợt 6 làm một phần (v0.1.0) — xem §13.  
+> **Mục tiêu:** Một công cụ **độc lập, không gắn với dự án, ngôn ngữ hay framework nào** để tối ưu, chuẩn hóa và kiểm tra asset ảnh trước khi đưa vào repository. Mọi dự án — Node, Python, PHP/Laravel, Rust, C#/Unity, shell/CI… — dùng chung qua **CLI có hợp đồng JSON ổn định**; Node có thêm API import trực tiếp; kèm web UI chạy cục bộ.  
 > **Nguyên tắc:** Dễ dùng, bảo toàn dữ liệu, kết quả có thể tái lập, an toàn mặc định, đo hiệu năng thực tế. **Không biến thành dịch vụ xử lý ảnh upload production.**
 
 ## 0. Quyết định và phạm vi
@@ -35,7 +35,7 @@
 5. Web UI chỉ cho phép duyệt/ghi trong root được cấp quyền; không bị website khác điều khiển API local; file preview/temp được dọn.
 6. Cài package và chạy trên Windows (PowerShell), Ubuntu/WSL; test smoke với macOS nếu có máy/CI.
 7. Chất lượng crop, alpha và màu được đánh giá trên bộ ảnh vàng (golden fixtures), **không chỉ dựa vào tốc độ**.
-8. Có ví dụ tích hợp chạy trong CI cho Node, Python, PHP/Laravel, Go và shell, **chỉ dùng CLI + JSON**, không cần biết nội bộ Node.
+8. Có ví dụ tích hợp chạy trong CI cho Node, Python, PHP/Laravel và shell, **chỉ dùng CLI + JSON**, không cần biết nội bộ Node.
 9. Máy không cài Node vẫn dùng được qua binary độc lập hoặc Docker image (§6.3).
 10. Áp imgfit vào dự án đã có sẵn ảnh output không bị lỗi conflict hàng loạt (luồng `--adopt`).
 
@@ -117,7 +117,7 @@ imgfit run --json                      # stdout chỉ chứa JSON; log/progress 
 
 ## 3. Cấu hình dự án — chuẩn hóa, dễ chia sẻ
 
-**Ví dụ `imgfit.json` (dự án web bất kỳ — Laravel, Django, Go, Next…):**
+**Ví dụ `imgfit.json` (dự án web bất kỳ — Laravel, Django, Next…):**
 
 ```json
 {
@@ -230,7 +230,7 @@ imgfit/
 │   └── contracts/            # result, config and API types
 ├── ui/                        # Vue 3/Vite TS; builds into dist/ui
 ├── schema/                    # imgfit.schema.json, result.schema.json, job.schema.json
-├── examples/                  # node, python, php-laravel, go, shell, unity, docker — chạy trong CI
+├── examples/                  # node, python, php-laravel, shell, unity, docker — chạy trong CI
 ├── fixtures/                  # deterministic small test images
 ├── test/{unit,integration,e2e}/
 └── scripts/                   # build, smoke-package, bench
@@ -366,7 +366,7 @@ Không triển khai `GET /api/fs?path=<arbitrary>` vô giới hạn. Nếu cho d
 | Output | `--json`: một document; `exec`/`--json-lines`: NDJSON, mỗi dòng một event `progress` / `result` / `summary` |
 | Lỗi | Exit code (§2.1) + `errors[].code` ổn định |
 | Log | Luôn ở stderr; stdout sạch khi bật `--json` |
-| Schema | `imgfit schema config\|result\|job` → sinh type bằng quicktype, datamodel-code-generator, go-jsonschema… |
+| Schema | `imgfit schema config\|result\|job` → sinh type bằng quicktype, datamodel-code-generator… |
 | Encoding/path | UTF-8; path trong JSON dùng `/`, tương đối theo root config, trừ khi có `--absolute-paths` |
 | Tìm binary | `IMGFIT_BIN` nếu có, nếu không thì `imgfit` trên `PATH` |
 
@@ -377,7 +377,7 @@ Node có thêm API import trực tiếp (`import { run } from "imgfit"`), dùng 
 | Kênh | Dành cho | Ghi chú |
 |---|---|---|
 | npm: `npm i -D imgfit`, `npx imgfit@x.y.z` | Dự án đã có Node (Node, Laravel + Vite, Vue…) | Private registry hoặc Git URL **pin tag/commit** |
-| Binary độc lập theo platform (win-x64, linux-x64, linux-arm64, macos-arm64) | Python, Go, PHP, Unity, CI không có Node | Node SEA hoặc công cụ tương đương + binary native của sharp/libvips đi kèm. **Cần PoC ở Đợt 1**, vì đóng gói native addon chưa chắc chắn |
+| Binary độc lập theo platform (win-x64, linux-x64, linux-arm64, macos-arm64) | Python, PHP, Unity, CI không có Node | Node SEA hoặc công cụ tương đương + binary native của sharp/libvips đi kèm. **Cần PoC ở Đợt 1**, vì đóng gói native addon chưa chắc chắn |
 | Docker image `imgfit:<version>` | CI, hoặc máy không muốn cài gì | Mount thư mục project; chú ý uid/quyền file trên Linux |
 
 Mọi kênh dùng cùng một semver. `imgfit --version --json` báo cả version sharp/libvips. Dự án nên pin version (lockfile npm, file `.imgfit-version`, hoặc tag Docker); CLI cảnh báo khi version đang chạy khác `.imgfit-version`.
@@ -416,18 +416,6 @@ $report = json_decode($result->output(), true, flags: JSON_THROW_ON_ERROR);
 if ($result->failed()) { throw new RuntimeException('imgfit failed'); }
 ```
 
-**Go**
-
-```go
-cmd := exec.Command(bin, "run", "--config", "imgfit.json", "--json")
-out, err := cmd.Output() // exit code != 0 vẫn có stdout; err là *exec.ExitError
-var report struct {
-    SchemaVersion int `json:"schemaVersion"`
-    Summary struct{ Failed int `json:"failed"` } `json:"summary"`
-}
-if jerr := json.Unmarshal(out, &report); jerr != nil { return jerr }
-```
-
 **Shell / Makefile / CI**
 
 ```bash
@@ -453,7 +441,7 @@ docker run --rm -v "$PWD:/work" -w /work imgfit:1.0.0 check
 | CLI             | dry-run không ghi, JSON parse được, exit code, `check` read-only, Ctrl+C, multiple inputs, Windows/WSL paths                                                             |
 | UI/API          | upload size limits, session token, Host/Origin/CORS, path traversal, zip traversal, SSE reconnect, cancel, retry, stale write confirmation                               |
 | Framework       | Unity: file ảnh thay mà `.meta` GUID vẫn giữ, backup/lock không sinh asset rác; web: dev server/watcher không bắt file tạm                                                |
-| Tích hợp        | ví dụ Node/Python/PHP/Go/shell chạy trong CI; JSON validate theo schema; argv chứa Unicode/khoảng trắng; binary độc lập trên máy không có Node; Docker                   |
+| Tích hợp        | ví dụ Node/Python/PHP/shell chạy trong CI; JSON validate theo schema; argv chứa Unicode/khoảng trắng; binary độc lập trên máy không có Node; Docker                   |
 | Adopt           | dự án đã có output, cache bị xóa, clone mới trên máy khác → không conflict sai; file sửa tay bị phát hiện                                                                |
 
 - Unit test crop math/planner/config/paths/fingerprint; integration test Sharp với fixtures; API integration test trên loopback; E2E UI ít nhất 1 flow end-to-end (có thể dùng Playwright khi cần).
@@ -480,7 +468,7 @@ Tối ưu khi benchmark chỉ ra nút thắt; không bật mặc định `mozjpe
 
 **Xây:** project setup TS/Sharp/Commander/Vitest; validate source; EXIF; fit/cover/pad; encoder; safe staging; preflight conflict; `resize`, `info`, `capabilities`; `--jobs`, `--json` theo `result.schema.json`, error codes, dry-run; benchmark cơ sở; **PoC binary độc lập có sharp** trên Windows + Linux.
 
-**Kết quả (14/11/2026):** đã xong core, `resize`/`info`/`capabilities`/`schema`, 69 test, benchmark cơ sở (README §Hiệu năng), npm pack + cài thử, ví dụ Node/Python/PHP/shell chạy thật. **Chưa làm:** PoC binary độc lập, smoke trên Linux/WSL, ví dụ Go chưa chạy thử.
+**Kết quả (14/11/2026):** đã xong core, `resize`/`info`/`capabilities`/`schema`, 69 test, benchmark cơ sở (README §Hiệu năng), npm pack + cài thử, ví dụ Node/Python/PHP/shell chạy thật. **Chưa làm:** PoC binary độc lập, smoke trên Linux/WSL.
 
 **Done:** xử lý workload tham chiếu (§1), không hỏng file gốc, case collision bị chặn trước ghi; test orientation/alpha/small-input; có benchmark thật 1/2/4/8 jobs (không bắt buộc đạt mục tiêu thời gian); kết luận PoC binary: đạt → dùng, không đạt → fallback Docker.
 
@@ -504,7 +492,7 @@ Tối ưu khi benchmark chỉ ra nút thắt; không bật mặc định `mozjpe
 
 ### Đợt 5 — Tích hợp, phân phối, CI
 
-**Xây:** npm pack/install smoke, binary độc lập theo platform + Docker image, `examples/` cho Node/Python/PHP-Laravel/Go/shell/Unity chạy trong CI, Unity import test, hooks pre-commit và GitHub Actions check, docs troubleshooting.
+**Xây:** npm pack/install smoke, binary độc lập theo platform + Docker image, `examples/` cho Node/Python/PHP-Laravel/shell/Unity chạy trong CI, Unity import test, hooks pre-commit và GitHub Actions check, docs troubleshooting.
 
 **Done:** project trống ở mỗi ngôn ngữ trong `examples/` gọi được imgfit và parse được JSON; máy không có Node chạy được bằng binary hoặc Docker; Windows/WSL smoke pass; CI check không ghi dữ liệu.
 
@@ -548,7 +536,7 @@ Tối ưu khi benchmark chỉ ra nút thắt; không bật mặc định `mozjpe
 - [ ] Preview trước/sau khớp output; UI có cancel/retry, xác nhận overwrite và cleanup temp.
 - [ ] Có test crop manual (focal point), rename collision, Unity `.meta`/GUID.
 - [ ] Package cài được từ artifact đã build, smoke trên Windows và Linux/WSL; binary độc lập hoặc Docker chạy được trên máy không có Node.
-- [ ] JSON output/config/job có schema công bố; ví dụ Node/Python/PHP/Go/shell pass trong CI.
+- [ ] JSON output/config/job có schema công bố; ví dụ Node/Python/PHP/shell pass trong CI.
 - [ ] `--adopt` và `imgfit.managed.json` được test với dự án có sẵn ảnh.
 - [ ] README có quickstart trong 5 phút, config reference, limitations, FAQ, backup policy.
 - [ ] Benchmark công bố số liệu thực trên fixture và phần cứng xác định.
@@ -611,6 +599,32 @@ Tối ưu khi benchmark chỉ ra nút thắt; không bật mặc định `mozjpe
 ```
 
 Lần đầu áp vào project đã có ảnh: `imgfit run --adopt` → xác nhận danh sách → các lần `run` sau thay ảnh tại chỗ, giữ `.meta`/GUID.
+
+## 13. Trạng thái triển khai (14/11/2026)
+
+| Đợt | Kết quả | Kiểm chứng |
+|---|---|---|
+| 1 | `resize`, `info`, `capabilities`, `schema`, engine ghi an toàn | unit + integration test |
+| 2 | `imgfit.json` (Ajv 2020-12 + kiểm tra ngữ nghĩa), profile, env allowlist, `run` incremental, `--adopt`, `{id}`/names, crops, `check` (standard / output-only / reproducible, lọc theo path), `init`, `exec` NDJSON, lock, `--report-json` | test project/contract; smoke trên dự án mẫu |
+| 3 | Web UI Vue 3 + Express loopback: upload theo phiên, thumbnail, preview trước/sau, SSE + reconnect, hủy, retry, ZIP stream | test API server (bảo mật, upload, SSE, ZIP) |
+| 4 | Crop editor, rename mapper, write preview → commit có nonce gắn hash kế hoạch, backup | test API (stale confirmation, nonce dùng một lần) |
+| 5 | npm pack smoke, bản portable (Node gốc + app), Dockerfile, CI matrix, ví dụ Node/Python/PHP/shell/hook/CI/Unity | smoke Windows; 105 test pass trong container Linux; Docker image chạy được; portable chạy trên máy không có Node trong PATH |
+| 6 | `run --watch`, phát hiện nguồn trùng, `--report-html`, benchmark WebP/AVIF, preset L/LL trong UI | test watch; bench |
+
+**Khác so với plan:**
+
+- **Node SEA một file:** Windows Smart App Control chặn exe chưa ký (inject blob làm hỏng chữ ký `node.exe`). Bản mặc định là portable folder giữ `node.exe` gốc; SEA là tùy chọn `--sea`, cần code-sign trên Windows.
+- **ZIP:** không dùng archiver (archiver 8 kéo theo minimatch có lỗ hổng). Thay bằng writer STORE tự viết, không còn dependency có lỗ hổng.
+- **TypeScript 5.9** thay vì 7: vue-tsc chưa hỗ trợ TS 7.
+- **Ví dụ Go:** bỏ theo yêu cầu.
+- **`exec`:** danh sách job dùng khóa `jobs`, mức song song là `concurrency`.
+
+**Chưa làm hoặc chưa kiểm chứng:**
+
+- E2E UI trên trình duyệt thật (Playwright). API đã có test, UI mới được build + type-check.
+- Test import trong Unity Editor thật.
+- Smoke trên macOS (CI matrix có job macOS nhưng chưa chạy).
+- PDF adapter: theo plan là module/repo riêng, không thuộc v1.
 
 ## 12. Tài liệu tham khảo kỹ thuật
 
