@@ -1,0 +1,55 @@
+{
+  "name": "imgfit",
+  "version": "0.1.0",
+  "description": "Tối ưu, chuẩn hóa và kiểm tra asset ảnh trước khi đưa vào repository. Dùng từ mọi ngôn ngữ qua CLI + JSON.",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "imgfit": "dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./schema/*": "./schema/*"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bench": "npm run build && node scripts/bench.mjs"
+  },
+  "keywords": [
+    "image",
+    "resize",
+    "optimize",
+    "sharp",
+    "cli",
+    "assets"
+  ],
+  "dependencies": {
+    "commander": "^15.1.0",
+    "fast-glob": "^3.3.3",
+    "p-limit": "^7.3.3",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
