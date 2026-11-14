@@ -1,0 +1,12 @@
+node_modules
+dist
+release
+.imgfit
+.bench
+coverage
+*.tgz
+.git
+docs
+examples
+test
+scripts

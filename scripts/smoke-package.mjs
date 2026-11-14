@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+/**
+ * Package smoke test as a real user would: npm pack → install the .tgz into an empty project → use CLI + Node API.
+ *   node scripts/smoke-package.mjs        (run npm run build first)
+ * Exits non-zero if any step fails.
+ */
+import { spawnSync } from "node:child_process";
+import { mkdtemp, readdir, rm, writeFile, mkdir } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "..");
+const win = process.platform === "win32";
+const tmp = await mkdtemp(path.join(os.tmpdir(), "imgfit-smoke-"));
+
+function run(cmd, args, cwd, { allow = [0] } = {}) {
+  // on Windows npm/npx are .cmd files → run through cmd.exe /c; arguments are script constants.
+  const [c, a] = win && (cmd === "npm" || cmd === "npx") ? ["cmd.exe", ["/d", "/s", "/c", cmd, ...args]] : [cmd, args];
+  const r = spawnSync(c, a, { cwd, encoding: "utf8" });
+  if (!allow.includes(r.status)) {
+    console.error(`✗ ${cmd} ${args.join(" ")} (exit ${r.status})\n${r.stdout}\n${r.stderr}`);
+    process.exit(1);
+  }
+  return r;
+}
+const step = (s) => console.error(`→ ${s}`);
+
+try {
+  step("npm pack");
+  run("npm", ["pack", "--pack-destination", tmp], root);
+  const tgz = (await readdir(tmp)).find((f) => f.endsWith(".tgz"));
+  const proj = path.join(tmp, "consumer");
+  await mkdir(path.join(proj, "images-src", "photos"), { recursive: true });
+  await writeFile(path.join(proj, "package.json"), JSON.stringify({ name: "consumer", private: true, type: "module" }));
+
+  step(`npm install ${tgz}`);
+  run("npm", ["install", "--no-audit", "--no-fund", path.join(tmp, tgz)], proj);
+
+  step("CLI: --version / capabilities");
+  const v = JSON.parse(run("npx", ["imgfit", "--version", "--json"], proj).stdout);
+  if (!v.imgfit || !v.libvips) throw new Error("version JSON thiếu trường");
+  JSON.parse(run("npx", ["imgfit", "capabilities", "--json"], proj).stdout);
+
+  step("Node API + ảnh mẫu");
+  await writeFile(
+    path.join(proj, "make.mjs"),
+    `import sharp from "sharp";
+     await sharp({ create: { width: 1200, height: 800, channels: 3, background: "#468" } }).jpeg().toFile("images-src/photos/a.jpg");
+     const { resize, capabilities } = await import("imgfit");
+     const r = await resize({ inputs: ["images-src/photos"], output: "api-out", width: 64, height: 64, mode: "cover", format: "webp" });
+     if (r.status !== "ok" || r.summary.created !== 1) { console.error(JSON.stringify(r, null, 2)); process.exit(1); }
+     console.log(capabilities().output.join(","));`,
+  );
+  run("node", ["make.mjs"], proj);
+
+  step("CLI: init → run → run (unchanged) → check");
+  run("npx", ["imgfit", "init", "--profile", "web"], proj);
+  const r1 = JSON.parse(run("npx", ["imgfit", "run", "--json"], proj).stdout);
+  const r2 = JSON.parse(run("npx", ["imgfit", "run", "--json"], proj).stdout);
+  if (r1.summary.created < 1 || r2.summary.unchanged !== r1.summary.created) throw new Error(`incremental sai: ${JSON.stringify([r1.summary, r2.summary])}`);
+  const c = JSON.parse(run("npx", ["imgfit", "check", "--json"], proj).stdout);
+  if (c.status !== "ok") throw new Error(`check: ${c.status}`);
+  run("npx", ["imgfit", "run", "--config", "nope.json", "--json"], proj, { allow: [2] });
+
+  console.error(`✓ smoke OK (imgfit ${v.imgfit}, sharp ${v.sharp}, ${process.platform}-${process.arch})`);
+} finally {
+  await rm(tmp, { recursive: true, force: true });
+}

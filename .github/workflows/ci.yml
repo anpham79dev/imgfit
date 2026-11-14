@@ -1,0 +1,91 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [20, 22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run smoke
+
+  examples:
+    name: examples (${{ matrix.os }})
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: "8.3" }
+      - run: npm ci && npm run build
+      - name: Ảnh mẫu
+        run: node -e "const s=require('sharp');require('fs').mkdirSync('ex/raw',{recursive:true});s({create:{width:800,height:600,channels:3,background:'#468'}}).jpeg().toFile('ex/raw/a.jpg')"
+      - name: Python
+        shell: bash
+        run: |
+          export IMGFIT_BIN="$PWD/ex/imgfit$([ "$RUNNER_OS" = Windows ] && echo .cmd)"
+          if [ "$RUNNER_OS" = Windows ]; then printf '@"%s" "%s" %%*\r\n' "$(cygpath -w "$(which node)")" "$(cygpath -w "$PWD/dist/bin.js")" > ex/imgfit.cmd; else printf '#!/bin/sh\nexec node "%s" "$@"\n' "$PWD/dist/bin.js" > ex/imgfit && chmod +x ex/imgfit; fi
+          cd ex && python ../examples/python/resize.py raw out-py
+      - name: PHP
+        shell: bash
+        run: |
+          export IMGFIT_BIN="$PWD/ex/imgfit$([ "$RUNNER_OS" = Windows ] && echo .cmd)"
+          cd ex && php ../examples/php/resize.php raw out-php
+      - name: Shell
+        if: runner.os != 'Windows'
+        run: cd ex && IMGFIT_BIN="$PWD/imgfit" bash ../examples/shell/resize.sh raw out-sh
+
+  portable:
+    name: portable (${{ matrix.os }})
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: node scripts/build-portable.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: imgfit-portable-${{ runner.os }}-${{ runner.arch }}
+          path: release/*.{zip,tar.gz}
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t imgfit:ci .
+      - run: docker run --rm imgfit:ci --version
