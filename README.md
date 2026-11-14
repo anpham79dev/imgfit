@@ -777,25 +777,24 @@ npm run portable       # bản portable cho nền tảng hiện tại → releas
 npm run docker         # docker build
 ```
 
-Cấu trúc:
+Cấu trúc theo lớp. Lớp dưới không import lớp trên: `core` ← `image` ← `io` ← `pipeline` ← `project` ← `commands` ← `cli` / `server`.
 
 ```text
 src/
-├── bin.ts                 # entry lệnh `imgfit` (SIGINT, stdin, xác nhận adopt)
-├── cli.ts                 # commander → main(argv, io) test được in-process
-├── index.ts               # Node API công khai
-├── commands/              # resize, run (+adopt), check, init, exec, watch, info/capabilities
-├── config/                # load (schema + ngữ nghĩa + env + profile), manifest (rules → jobs), validate (Ajv)
-├── core/
-│   ├── engine.ts          # prepare → preflight trùng đích → encode → xác minh → publish (dùng chung)
-│   ├── process.ts         # probe, planTransform (thuần), transformToFile (sharp)
-│   ├── geometry.ts        # toán resize/crop/focal
-│   ├── output.ts          # file tạm, publish độc quyền, replace + backup, retry Windows
-│   ├── state.ts           # managed / cache / names / crops, ghi JSON nguyên tử
-│   ├── lock.ts, paths.ts, template.ts, inputs.ts, formats.ts, fingerprint.ts
-│   ├── report.ts, report-html.ts, errors.ts, exit.ts
-└── server/                # web UI backend: security, sessions, batches (SSE), zip, app (routes)
-ui/                        # Vue 3 + Vite: QuickView, ProjectView, components/, composables/
+├── bin.ts               # entry lệnh `imgfit` (SIGINT, stdin, xác nhận adopt)
+├── index.ts             # Node API công khai
+├── core/                # hợp đồng dùng chung: errors, exit, report, report-html, paths, template, fingerprint
+├── image/               # xử lý một ảnh: geometry, formats, options, probe, plan (thuần), encode, sharp (cấu hình)
+├── io/                  # hệ thống file: inputs (file/thư mục/glob), publish (ghi an toàn), fs (retry, JSON nguyên tử), zip
+├── pipeline/            # job.ts: prepare → trùng đích → encode → xác minh → publish; batch.ts: chạy song song + progress
+├── project/             # thế giới imgfit.json
+│   ├── config/          # types, find, load, resolve (preset/rule/env), validate (Ajv), samples
+│   ├── state/           # managed, cache, user-data (names/crops), lock, saver
+│   └── sources, manifest, open, decide (incremental), analysis (orphan/trùng), verify (check)
+├── commands/            # thao tác cấp cao = Node API: resize, run, check, init, exec, watch, info
+├── cli/                 # index (main), context, format, options, parsers, commands/<lệnh>.ts
+└── server/              # app, context, http, security, sessions, batches (SSE), upload, previews, routes/
+ui/                      # Vue 3 + Vite: App, QuickView, ProjectView, components/, composables/
 schema/                    # JSON Schema công khai: config, result, info, job
 examples/                  # node, python, php, shell, hooks, ci, unity
 scripts/                   # bench, smoke-package, build-portable
