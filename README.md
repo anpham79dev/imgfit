@@ -152,33 +152,66 @@ Dùng trong script hoặc từ ngôn ngữ khác thì thêm `--json`. Khi đó s
   "profile": "web",
   "env": ["IMG_SOURCE_DIR"],
   "roots": { "input": "${IMG_SOURCE_DIR}", "output": "public/images" },
-  "defaults": { "upscale": false, "stripMetadata": true, "onConflict": "error", "jobs": 4 },
+  "defaults": {
+    "upscale": false,
+    "stripMetadata": true,
+    "onConflict": "error",
+    "jobs": 4
+  },
   "presets": {
-    "hero":  { "size": [1920, 1080], "mode": "fit", "format": "jpg", "quality": 85 },
-    "thumb": { "size": [256, 256], "mode": "cover", "crop": { "position": "attention" }, "format": "webp", "maxFileKB": 40 },
-    "logo":  { "size": [256, 256], "mode": "fit", "format": "png" }
+    "hero": {
+      "size": [1920, 1080],
+      "mode": "fit",
+      "format": "jpg",
+      "quality": 85
+    },
+    "thumb": {
+      "size": [256, 256],
+      "mode": "cover",
+      "crop": { "position": "attention" },
+      "format": "webp",
+      "maxFileKB": 40
+    },
+    "logo": { "size": [256, 256], "mode": "fit", "format": "png" }
   },
   "rules": [
-    { "id": "photos",  "from": "photos/**/*.{jpg,jpeg,png,webp}", "preset": ["hero", "thumb"], "to": "{preset}/{dir}/{name}.{ext}" },
-    { "id": "avatars", "from": "avatars/*.{jpg,png}", "exclude": ["**/draft-*"], "preset": "thumb", "to": "avatars/{id}.{ext}", "names": "imgfit.names.json" },
-    { "id": "logos",   "from": "logos/*.png", "preset": "logo", "to": "logos/{name}.{ext}" }
+    {
+      "id": "photos",
+      "from": "photos/**/*.{jpg,jpeg,png,webp}",
+      "preset": ["hero", "thumb"],
+      "to": "{preset}/{dir}/{name}.{ext}"
+    },
+    {
+      "id": "avatars",
+      "from": "avatars/*.{jpg,png}",
+      "exclude": ["**/draft-*"],
+      "preset": "thumb",
+      "to": "avatars/{id}.{ext}",
+      "names": "imgfit.names.json"
+    },
+    {
+      "id": "logos",
+      "from": "logos/*.png",
+      "preset": "logo",
+      "to": "logos/{name}.{ext}"
+    }
   ],
   "budget": { "maxFileKB": 1024 }
 }
 ```
 
-| Khóa | Ý nghĩa |
-|---|---|
-| `schemaVersion` | Luôn là `1` |
-| `profile` | `generic` \| `web` \| `unity`. Chỉ là bộ mặc định và whitelist định dạng output: generic/web cho jpg, png, webp, avif; unity cho jpg, png. Không có logic riêng theo framework |
-| `env` | Danh sách biến môi trường được phép dùng dạng `${VAR}` trong `roots`. Biến chưa khai báo hoặc chưa đặt → `E_CONFIG_INVALID`. imgfit không bao giờ chạy lệnh shell hay đánh giá code từ config |
-| `roots.input` | Thư mục ảnh gốc. Khuyến nghị đặt **ngoài repo** và trỏ tới qua biến môi trường |
-| `roots.output` | Gốc output. Không output nào được ghi ra ngoài thư mục này |
-| `defaults` | `upscale`, `stripMetadata`, `onConflict` (`error`/`replace`/`skip`), `jobs`, `smallInput`, `background`, `quality` áp cho mọi preset |
-| `presets.<tên>` | `size: [w, h]` (bắt buộc), `mode`, `format`, `quality`, `upscale`, `smallInput`, `crop.position` (`center`/`top`/`attention`), `background`, `sharpen` (sigma), `stripMetadata`, `png: {compressionLevel, palette}`, `blockMultiple`, `maxFileKB` |
-| `rules[]` | `id` (duy nhất), `from` (glob hoặc mảng glob, tương đối theo `roots.input`), `exclude`, `preset` (tên hoặc mảng), `to` (template tương đối theo `roots.output`), `names` (file mapping cho `{id}`) |
-| `budget.maxFileKB` | Ngân sách dung lượng mặc định cho mỗi output; `check` báo `E_BUDGET_EXCEEDED` khi vượt |
-| `cache.path` / `cropOverrides.path` / `managed.path` | Đổi vị trí các file trạng thái (mặc định `.imgfit/cache.json`, `imgfit.crops.json`, `imgfit.managed.json`) |
+| Khóa                                                 | Ý nghĩa                                                                                                                                                                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion`                                      | Luôn là `1`                                                                                                                                                                                                                                       |
+| `profile`                                            | `generic` \| `web` \| `unity`. Chỉ là bộ mặc định và whitelist định dạng output: generic/web cho jpg, png, webp, avif; unity cho jpg, png. Không có logic riêng theo framework                                                                    |
+| `env`                                                | Danh sách biến môi trường được phép dùng dạng `${VAR}` trong `roots`. Biến chưa khai báo hoặc chưa đặt → `E_CONFIG_INVALID`. imgfit không bao giờ chạy lệnh shell hay đánh giá code từ config                                                     |
+| `roots.input`                                        | Thư mục ảnh gốc. Khuyến nghị đặt **ngoài repo** và trỏ tới qua biến môi trường                                                                                                                                                                    |
+| `roots.output`                                       | Gốc output. Không output nào được ghi ra ngoài thư mục này                                                                                                                                                                                        |
+| `defaults`                                           | `upscale`, `stripMetadata`, `onConflict` (`error`/`replace`/`skip`), `jobs`, `smallInput`, `background`, `quality` áp cho mọi preset                                                                                                              |
+| `presets.<tên>`                                      | `size: [w, h]` (bắt buộc), `mode`, `format`, `quality`, `upscale`, `smallInput`, `crop.position` (`center`/`top`/`attention`), `background`, `sharpen` (sigma), `stripMetadata`, `png: {compressionLevel, palette}`, `blockMultiple`, `maxFileKB` |
+| `rules[]`                                            | `id` (duy nhất), `from` (glob hoặc mảng glob, tương đối theo `roots.input`), `exclude`, `preset` (tên hoặc mảng), `to` (template tương đối theo `roots.output`), `names` (file mapping cho `{id}`)                                                |
+| `budget.maxFileKB`                                   | Ngân sách dung lượng mặc định cho mỗi output; `check` báo `E_BUDGET_EXCEEDED` khi vượt                                                                                                                                                            |
+| `cache.path` / `cropOverrides.path` / `managed.path` | Đổi vị trí các file trạng thái (mặc định `.imgfit/cache.json`, `imgfit.crops.json`, `imgfit.managed.json`)                                                                                                                                        |
 
 Config được validate bằng JSON Schema ([schema/config.schema.json](schema/config.schema.json), hoặc `imgfit schema config`). Ngoài ra imgfit còn kiểm tra ngữ nghĩa:
 
@@ -198,6 +231,7 @@ VS Code và các IDE đọc `"$schema"` để gợi ý và báo lỗi ngay khi b
 ```powershell
 $env:IMG_SOURCE_DIR = "D:\art-source\project"      # PowerShell
 ```
+
 ```bash
 export IMG_SOURCE_DIR=/mnt/d/art-source/project      # bash / WSL
 ```
@@ -208,14 +242,14 @@ export IMG_SOURCE_DIR=/mnt/d/art-source/project      # bash / WSL
 
 Với mỗi cặp (nguồn × preset) của mỗi rule, `run` quyết định như sau:
 
-| Tình huống | Hành động |
-|---|---|
-| Đích chưa có | **create** |
-| Đích do imgfit quản lý, nguồn, preset, focal point và version engine **không đổi**, output không bị sửa | **unchanged**: không encode |
-| Đích do imgfit quản lý, có thứ đã đổi | **replace** |
-| Output đã bị sửa ngoài imgfit | `E_OUTPUT_MODIFIED`: không đè. `--overwrite` để tạo lại (kèm cảnh báo) |
-| Đích có sẵn nhưng **chưa** do imgfit quản lý | `E_OUTPUT_CONFLICT`: gợi ý `--adopt` hoặc `--overwrite` |
-| Hai input/rule cùng ra một đích, hoặc đích trùng nguồn | **Cả batch dừng, không ghi file nào** |
+| Tình huống                                                                                              | Hành động                                                              |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Đích chưa có                                                                                            | **create**                                                             |
+| Đích do imgfit quản lý, nguồn, preset, focal point và version engine **không đổi**, output không bị sửa | **unchanged**: không encode                                            |
+| Đích do imgfit quản lý, có thứ đã đổi                                                                   | **replace**                                                            |
+| Output đã bị sửa ngoài imgfit                                                                           | `E_OUTPUT_MODIFIED`: không đè. `--overwrite` để tạo lại (kèm cảnh báo) |
+| Đích có sẵn nhưng **chưa** do imgfit quản lý                                                            | `E_OUTPUT_CONFLICT`: gợi ý `--adopt` hoặc `--overwrite`                |
+| Hai input/rule cùng ra một đích, hoặc đích trùng nguồn                                                  | **Cả batch dừng, không ghi file nào**                                  |
 
 "Do imgfit quản lý" được xác định qua `imgfit.managed.json` (file được commit), **không dựa vào cache**. Vì vậy clone repo trên máy khác hoặc xóa `.imgfit/` không làm imgfit nhận nhầm output của chính nó là file lạ.
 
@@ -252,7 +286,13 @@ Adopt **không encode và không sửa ảnh**, chỉ ghi hash của file hiện
 **`{id}` theo `imgfit.names.json`** (commit được):
 
 ```json
-{ "schemaVersion": 1, "names": { "avatars/IMG_0012.jpg": "hero-001", "avatars/IMG_0013.jpg": "hero-002" } }
+{
+  "schemaVersion": 1,
+  "names": {
+    "avatars/IMG_0012.jpg": "hero-001",
+    "avatars/IMG_0013.jpg": "hero-002"
+  }
+}
 ```
 
 Khóa là đường dẫn nguồn tương đối theo `roots.input`. Nguồn chưa có id sẽ báo `E_NAME_MISSING`; id trùng nhau sẽ làm trùng đích và dừng cả batch. File này soạn tay, sinh bằng script ở bất kỳ ngôn ngữ nào, hoặc dùng mục **Đặt tên theo id** trong web UI (dán danh sách id, xem trước mapping, kiểm tra trùng/thiếu/dư).
@@ -260,7 +300,10 @@ Khóa là đường dẫn nguồn tương đối theo `roots.input`. Nguồn ch�
 **Focal point theo `imgfit.crops.json`** (commit được), áp cho mọi preset `cover` của nguồn đó:
 
 ```json
-{ "schemaVersion": 1, "crops": { "avatars/IMG_0012.jpg": { "x": 0.5, "y": 0.32 } } }
+{
+  "schemaVersion": 1,
+  "crops": { "avatars/IMG_0012.jpg": { "x": 0.5, "y": 0.32 } }
+}
 ```
 
 Đổi focal point làm fingerprint đổi, nên `run` sẽ tạo lại đúng các output liên quan. Cách dễ nhất là chọn focal point trong web UI bằng cách click lên ảnh.
@@ -269,11 +312,11 @@ Khóa là đường dẫn nguồn tương đối theo `roots.input`. Nguồn ch�
 
 `check` **chỉ đọc**. Lệnh không encode vào dự án, không ghi cache, managed hay crops, và không lấy lock.
 
-| `--check-mode` | Cần | Kiểm tra |
-|---|---|---|
-| `standard` *(mặc định)* | nguồn + output | Output tồn tại; bytes đúng định dạng và khớp đuôi; kích thước đúng **chính xác** theo kế hoạch; ngân sách KB; whitelist của profile; không bị sửa tay; **không stale** (nguồn, preset, focal hoặc engine đổi mà chưa `run` lại) |
-| `output-only` | output + `imgfit.managed.json` | Như trên trừ stale (không có nguồn). **Không chứng minh crop đúng** hay nguồn chưa đổi. Dùng cho CI chỉ có repo |
-| `reproducible` | nguồn + output | `standard` + encode lại vào thư mục tạm và so checksum với output trong repo |
+| `--check-mode`          | Cần                            | Kiểm tra                                                                                                                                                                                                                        |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `standard` _(mặc định)_ | nguồn + output                 | Output tồn tại; bytes đúng định dạng và khớp đuôi; kích thước đúng **chính xác** theo kế hoạch; ngân sách KB; whitelist của profile; không bị sửa tay; **không stale** (nguồn, preset, focal hoặc engine đổi mà chưa `run` lại) |
+| `output-only`           | output + `imgfit.managed.json` | Như trên trừ stale (không có nguồn). **Không chứng minh crop đúng** hay nguồn chưa đổi. Dùng cho CI chỉ có repo                                                                                                                 |
+| `reproducible`          | nguồn + output                 | `standard` + encode lại vào thư mục tạm và so checksum với output trong repo                                                                                                                                                    |
 
 ```bash
 imgfit check                                   # exit 1 nếu có file fail
@@ -289,16 +332,16 @@ Khi lọc theo đường dẫn mà danh sách có `imgfit.json`, `imgfit.names.j
 
 ### Các file trạng thái
 
-| File | Commit? | Vai trò |
-|---|---|---|
-| `imgfit.json` | ✔ | Cấu hình |
-| `imgfit.schema.json` | ✔ | Schema cho IDE (do `imgfit init` tạo, đúng version) |
-| `imgfit.managed.json` | ✔ | Output nào do imgfit quản lý: rule, preset, nguồn, fingerprint, hash. Dùng để quyết định conflict, phát hiện sửa tay, stale |
-| `imgfit.names.json` | ✔ | Nguồn → id cho `{id}` (dữ liệu người dùng) |
-| `imgfit.crops.json` | ✔ | Nguồn → focal point (dữ liệu người dùng) |
-| `.imgfit-version` | ✔ | Version imgfit dự án dùng (tùy chọn) |
-| `.imgfit/cache.json` | ✘ | Chữ ký nhanh size + mtime → hash, để khỏi hash lại output mỗi lần. **Xóa được bất cứ lúc nào**; cache hỏng thì được dựng lại (`W_STATE_REBUILT`), không bao giờ làm skip sai |
-| `.imgfit/backups/`, `.imgfit/locks/` | ✘ | Backup khi `--backup`, lock khi `run` |
+| File                                 | Commit? | Vai trò                                                                                                                                                                      |
+| ------------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `imgfit.json`                        | ✔       | Cấu hình                                                                                                                                                                     |
+| `imgfit.schema.json`                 | ✔       | Schema cho IDE (do `imgfit init` tạo, đúng version)                                                                                                                          |
+| `imgfit.managed.json`                | ✔       | Output nào do imgfit quản lý: rule, preset, nguồn, fingerprint, hash. Dùng để quyết định conflict, phát hiện sửa tay, stale                                                  |
+| `imgfit.names.json`                  | ✔       | Nguồn → id cho `{id}` (dữ liệu người dùng)                                                                                                                                   |
+| `imgfit.crops.json`                  | ✔       | Nguồn → focal point (dữ liệu người dùng)                                                                                                                                     |
+| `.imgfit-version`                    | ✔       | Version imgfit dự án dùng (tùy chọn)                                                                                                                                         |
+| `.imgfit/cache.json`                 | ✘       | Chữ ký nhanh size + mtime → hash, để khỏi hash lại output mỗi lần. **Xóa được bất cứ lúc nào**; cache hỏng thì được dựng lại (`W_STATE_REBUILT`), không bao giờ làm skip sai |
+| `.imgfit/backups/`, `.imgfit/locks/` | ✘       | Backup khi `--backup`, lock khi `run`                                                                                                                                        |
 
 `imgfit init` thêm `.imgfit/` và `*.imgfit-*.tmp` vào `.gitignore`. Các file JSON được ghi nguyên tử (file tạm rồi rename) với key đã sắp xếp, nên diff trong git ổn định.
 
@@ -314,36 +357,36 @@ imgfit resize <inputs...> --size <WxH> --output <dir> [options]
 
 Mỗi input có thể là:
 
-| Loại | Ví dụ | Ghi chú |
-|---|---|---|
-| File | `raw/a.jpg` | Định dạng nhận theo **nội dung**, không theo đuôi |
-| Thư mục | `raw/` | Quét các đuôi `jpg jpeg png webp avif tif tiff gif`. Thêm `--recursive` để quét cả thư mục con |
-| Glob | `"raw/**/*.{jpg,png}"` | **Đặt trong ngoặc kép.** Luôn dùng `/`, kể cả trên Windows |
+| Loại    | Ví dụ                  | Ghi chú                                                                                        |
+| ------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| File    | `raw/a.jpg`            | Định dạng nhận theo **nội dung**, không theo đuôi                                              |
+| Thư mục | `raw/`                 | Quét các đuôi `jpg jpeg png webp avif tif tiff gif`. Thêm `--recursive` để quét cả thư mục con |
+| Glob    | `"raw/**/*.{jpg,png}"` | **Đặt trong ngoặc kép.** Luôn dùng `/`, kể cả trên Windows                                     |
 
 Có thể truyền nhiều input một lúc; file trùng tự được loại bỏ. Khi quét, imgfit không đi theo symlink.
 
-| Tùy chọn | Mặc định | Ý nghĩa |
-|---|---|---|
-| `-s, --size <WxH>` | *(bắt buộc)* | `256x256`, `1920x1080`, hoặc `512` cho ảnh vuông |
-| `-o, --output <dir>` | *(bắt buộc)* | Thư mục output. Được tạo nếu chưa có, trừ khi `--dry-run` |
-| `-m, --mode <mode>` | `fit` | `fit` \| `cover` \| `pad` |
-| `-f, --format <fmt>` | `keep` | `keep` \| `jpg` \| `png` \| `webp` \| `avif` |
-| `-q, --quality <1-100>` | jpg 85, webp 82, avif 50 | PNG chỉ dùng khi `--png-palette` |
-| `-n, --name <template>` | `{name}.{ext}` | Xem [Đặt tên output](#đặt-tên-output) |
-| `-r, --recursive` | tắt | Quét thư mục con |
-| `--position <pos>` | `center` | Cho `cover`: `center` \| `top` \| `attention` \| `focal` |
-| `--focal <x,y>` | — | Focal point `[0,1]`, vd. `0.5,0.3`. Tự bật `--position focal` |
-| `--background <hex>` | trong suốt / `#ffffff` cho JPG | `#rgb`, `#rrggbb`, `#rrggbbaa` |
-| `--small-input <p>` | fit: `keep`; cover/pad: `error` | `error` \| `keep` \| `pad` |
-| `--upscale` | tắt | Cho phép phóng to |
-| `--sharpen [sigma]` | tắt | Làm nét sau khi giảm cỡ (0.3–10, mặc định 1) |
-| `--keep-metadata` | tắt | Giữ EXIF/XMP/ICC |
-| `--png-palette` / `--png-compression <0-9>` | tắt / 6 | Tùy chọn PNG |
-| `-j, --jobs <n>` | 4 | Số ảnh song song (1–64) |
-| `--overwrite` / `--skip-existing` | tắt | Thay / bỏ qua output đã tồn tại (không dùng chung được) |
-| `--backup`, `--backup-dir <dir>` | tắt, `.imgfit/backups` | Sao lưu trước khi thay |
-| `--max-pixels <n>` | 268 402 689 | Chống ảnh "bom giải nén" |
-| `--dry-run`, `--json`, `--report-json <f>`, `--report-html <f>`, `--quiet`, `--verbose` | | |
+| Tùy chọn                                                                                | Mặc định                        | Ý nghĩa                                                       |
+| --------------------------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------- |
+| `-s, --size <WxH>`                                                                      | _(bắt buộc)_                    | `256x256`, `1920x1080`, hoặc `512` cho ảnh vuông              |
+| `-o, --output <dir>`                                                                    | _(bắt buộc)_                    | Thư mục output. Được tạo nếu chưa có, trừ khi `--dry-run`     |
+| `-m, --mode <mode>`                                                                     | `fit`                           | `fit` \| `cover` \| `pad`                                     |
+| `-f, --format <fmt>`                                                                    | `keep`                          | `keep` \| `jpg` \| `png` \| `webp` \| `avif`                  |
+| `-q, --quality <1-100>`                                                                 | jpg 85, webp 82, avif 50        | PNG chỉ dùng khi `--png-palette`                              |
+| `-n, --name <template>`                                                                 | `{name}.{ext}`                  | Xem [Đặt tên output](#đặt-tên-output)                         |
+| `-r, --recursive`                                                                       | tắt                             | Quét thư mục con                                              |
+| `--position <pos>`                                                                      | `center`                        | Cho `cover`: `center` \| `top` \| `attention` \| `focal`      |
+| `--focal <x,y>`                                                                         | —                               | Focal point `[0,1]`, vd. `0.5,0.3`. Tự bật `--position focal` |
+| `--background <hex>`                                                                    | trong suốt / `#ffffff` cho JPG  | `#rgb`, `#rrggbb`, `#rrggbbaa`                                |
+| `--small-input <p>`                                                                     | fit: `keep`; cover/pad: `error` | `error` \| `keep` \| `pad`                                    |
+| `--upscale`                                                                             | tắt                             | Cho phép phóng to                                             |
+| `--sharpen [sigma]`                                                                     | tắt                             | Làm nét sau khi giảm cỡ (0.3–10, mặc định 1)                  |
+| `--keep-metadata`                                                                       | tắt                             | Giữ EXIF/XMP/ICC                                              |
+| `--png-palette` / `--png-compression <0-9>`                                             | tắt / 6                         | Tùy chọn PNG                                                  |
+| `-j, --jobs <n>`                                                                        | 4                               | Số ảnh song song (1–64)                                       |
+| `--overwrite` / `--skip-existing`                                                       | tắt                             | Thay / bỏ qua output đã tồn tại (không dùng chung được)       |
+| `--backup`, `--backup-dir <dir>`                                                        | tắt, `.imgfit/backups`          | Sao lưu trước khi thay                                        |
+| `--max-pixels <n>`                                                                      | 268 402 689                     | Chống ảnh "bom giải nén"                                      |
+| `--dry-run`, `--json`, `--report-json <f>`, `--report-html <f>`, `--quiet`, `--verbose` |                                 |                                                               |
 
 ---
 
@@ -355,13 +398,14 @@ Có thể truyền nhiều input một lúc; file trùng tự được loại b�
 
 Mọi chế độ đều **xoay ảnh theo EXIF trước** (kể cả ảnh lật gương), rồi mới tính khung.
 
-| Mode | Kết quả | Kích thước output |
-|---|---|---|
-| `fit` | Thu ảnh cho vừa khung, giữ tỷ lệ, không cắt | ≤ W×H |
-| `cover` | Lấp kín khung, cắt bớt phần thừa | Đúng W×H |
-| `pad` | Thu ảnh cho vừa khung rồi đệm nền cho đủ | Đúng W×H |
+| Mode    | Kết quả                                     | Kích thước output |
+| ------- | ------------------------------------------- | ----------------- |
+| `fit`   | Thu ảnh cho vừa khung, giữ tỷ lệ, không cắt | ≤ W×H             |
+| `cover` | Lấp kín khung, cắt bớt phần thừa            | Đúng W×H          |
+| `pad`   | Thu ảnh cho vừa khung rồi đệm nền cho đủ    | Đúng W×H          |
 
 `blockMultiple: 4` (thường dùng cho texture nén khối BC/DXT):
+
 - Với `fit`: kích thước được làm tròn **xuống** bội số, kèm cảnh báo `W_BLOCK_ROUNDED`.
 - Với `cover`/`pad`: preset phải sẵn là bội số. imgfit không ngầm đổi kích thước preset.
 
@@ -369,22 +413,22 @@ Mọi chế độ đều **xoay ảnh theo EXIF trước** (kể cả ảnh lậ
 
 Mặc định imgfit **không phóng to**. Không thể vừa đảm bảo "đúng W×H" vừa "không phóng to", nên với ảnh nhỏ phải chọn rõ cách xử lý:
 
-| `smallInput` | `fit` | `cover` | `pad` |
-|---|---|---|---|
-| `keep` | Giữ kích thước gốc *(mặc định)* | Chỉ crop về đúng tỷ lệ (`W_SMALL_INPUT_KEPT`) | Giữ kích thước gốc, không đệm |
-| `error` | `E_SMALL_INPUT` | `E_SMALL_INPUT` *(mặc định)* | `E_SMALL_INPUT` *(mặc định)* |
-| `pad` | Đệm nền lên W×H | Đệm nền lên W×H | Đệm nền lên W×H (`W_SMALL_INPUT_PADDED`) |
+| `smallInput` | `fit`                           | `cover`                                       | `pad`                                    |
+| ------------ | ------------------------------- | --------------------------------------------- | ---------------------------------------- |
+| `keep`       | Giữ kích thước gốc _(mặc định)_ | Chỉ crop về đúng tỷ lệ (`W_SMALL_INPUT_KEPT`) | Giữ kích thước gốc, không đệm            |
+| `error`      | `E_SMALL_INPUT`                 | `E_SMALL_INPUT` _(mặc định)_                  | `E_SMALL_INPUT` _(mặc định)_             |
+| `pad`        | Đệm nền lên W×H                 | Đệm nền lên W×H                               | Đệm nền lên W×H (`W_SMALL_INPUT_PADDED`) |
 
 "Nhỏ" nghĩa là: với `cover`, một chiều nhỏ hơn đích là đủ; với `fit`/`pad`, phải cả hai chiều đều nhỏ hơn. Bật `upscale` thì không còn trường hợp ảnh nhỏ.
 
 ### Điểm crop và focal point
 
-| Position | Hành vi |
-|---|---|
-| `center` | Giữ phần giữa *(mặc định)* |
-| `top` | Giữ mép trên, hợp với chân dung |
+| Position    | Hành vi                                                                  |
+| ----------- | ------------------------------------------------------------------------ |
+| `center`    | Giữ phần giữa _(mặc định)_                                               |
+| `top`       | Giữ mép trên, hợp với chân dung                                          |
 | `attention` | Heuristic của libvips (vùng nổi bật). **Không phải nhận diện khuôn mặt** |
-| `focal` | Giữ điểm `x,y` ở giữa khung nhiều nhất có thể, rồi clamp trong biên ảnh |
+| `focal`     | Giữ điểm `x,y` ở giữa khung nhiều nhất có thể, rồi clamp trong biên ảnh  |
 
 Tọa độ focal là tỷ lệ `[0,1]` trên **ảnh đã xoay theo EXIF**: `0,0` là góc trên trái, `1,1` là góc dưới phải.
 
@@ -399,16 +443,17 @@ Tọa độ focal là tỷ lệ `[0,1]` trên **ảnh đã xoay theo EXIF**: `0,
 
 ### Đặt tên output
 
-| Placeholder | Giá trị |
-|---|---|
-| `{name}` | Tên nguồn không đuôi, đã làm sạch |
-| `{ext}` | Đuôi theo **định dạng output thật** |
-| `{w}`, `{h}` | Kích thước đích của preset |
-| `{preset}` | Tên preset (bắt buộc khi rule có nhiều preset) |
-| `{dir}` | Thư mục con tương đối theo phần tĩnh của glob. Là placeholder duy nhất được sinh ra `/` |
-| `{id}` | ID từ file `names` của rule |
+| Placeholder  | Giá trị                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------- |
+| `{name}`     | Tên nguồn không đuôi, đã làm sạch                                                       |
+| `{ext}`      | Đuôi theo **định dạng output thật**                                                     |
+| `{w}`, `{h}` | Kích thước đích của preset                                                              |
+| `{preset}`   | Tên preset (bắt buộc khi rule có nhiều preset)                                          |
+| `{dir}`      | Thư mục con tương đối theo phần tĩnh của glob. Là placeholder duy nhất được sinh ra `/` |
+| `{id}`       | ID từ file `names` của rule                                                             |
 
 Để tên dùng được trên mọi hệ điều hành, imgfit tự làm sạch từng phần của đường dẫn:
+
 - Chuẩn hóa Unicode về NFC.
 - Thay ký tự cấm trên Windows (`<>:"/\|?*`) bằng `_`.
 - Bỏ dấu chấm và khoảng trắng ở cuối.
@@ -423,7 +468,7 @@ Template bị từ chối nếu có `..`, là đường dẫn tuyệt đối, ho
 3. **File tạm** `.<tên>.imgfit-<ngẫu nhiên>.tmp` nằm cùng thư mục đích, bắt đầu bằng `.` để Unity, Vite, webpack bỏ qua. File tạm được xác minh rồi mới publish, và bị xóa nếu lỗi.
 4. **Backup** nằm trong `.imgfit/backups/…`, **không bao giờ cạnh output**, nên không bị Unity import hay bị web server public.
 5. **Không ghi ra ngoài thư mục output**, kể cả qua symlink hoặc junction: `realpath` được kiểm tra lại ngay trước khi ghi. Không ghi đè lên symlink.
-6. **Windows:** file đang bị editor hoặc antivirus giữ (`EBUSY`/`EPERM`) thì imgfit retry có backoff, sau đó báo lỗi và giữ nguyên bản cũ. imgfit chỉ tắt cache *file handle* của libvips, vì cache này khóa file trên Windows.
+6. **Windows:** file đang bị editor hoặc antivirus giữ (`EBUSY`/`EPERM`) thì imgfit retry có backoff, sau đó báo lỗi và giữ nguyên bản cũ. imgfit chỉ tắt cache _file handle_ của libvips, vì cache này khóa file trên Windows.
 7. **Không bao giờ sửa hoặc xóa ảnh nguồn.**
 8. **Ctrl+C:** không bắt đầu ảnh mới, chờ các ảnh đang xử lý xong, ảnh đã ghi vẫn giữ, trạng thái được lưu. Exit 130. Nhấn Ctrl+C lần hai để thoát ngay.
 
@@ -453,24 +498,24 @@ Lệnh in ra một URL dạng `http://127.0.0.1:8765/?t=…`. Mở URL đó tron
 **Dự án** (khi có `imgfit.json`):
 
 - Xem manifest (kết quả `run --dry-run`): action, lỗi, cảnh báo của từng output.
-- Chọn một output để xem so sánh *output hiện tại ↔ sẽ ghi*, và chỉnh **focal point**. Lưu vào `imgfit.crops.json`.
+- Chọn một output để xem so sánh _output hiện tại ↔ sẽ ghi_, và chỉnh **focal point**. Lưu vào `imgfit.crops.json`.
 - **Đặt tên theo id:** dán danh sách id (mỗi dòng một id theo thứ tự nguồn, hoặc `tên-file,id`). UI hiện mapping, báo trùng/thiếu/dư, không tự đoán khi mơ hồ. Lưu vào file `names` của rule.
-- **Ghi vào dự án:** *Xem trước thay đổi* liệt kê tạo mới / thay thế / bị chặn. *Xác nhận ghi* chạy `run` (luôn kèm backup) với tiến độ trực tiếp.
+- **Ghi vào dự án:** _Xem trước thay đổi_ liệt kê tạo mới / thay thế / bị chặn. _Xác nhận ghi_ chạy `run` (luôn kèm backup) với tiến độ trực tiếp.
   - Mỗi xác nhận gắn với hash của đúng kế hoạch đã review và hết hạn sau 5 phút.
   - Nếu dự án thay đổi giữa lúc xem và lúc xác nhận, server từ chối (`E_STALE_CONFIRMATION`) và bắt xem lại.
 
 **Bảo mật** (server chỉ dành cho máy của bạn):
 
-| Lớp | Cơ chế |
-|---|---|
-| Mạng | Chỉ listen `127.0.0.1`. Không có tùy chọn mở `0.0.0.0` |
-| DNS rebinding | Chỉ chấp nhận `Host` là `127.0.0.1:<port>` hoặc `localhost:<port>` |
-| Phiên | Token bootstrap dùng một lần → cookie `HttpOnly; SameSite=Strict`. Token không nằm lâu trong URL hay log |
-| CSRF | Request ghi cần `Origin` cùng gốc **và** header `X-Imgfit-CSRF`. CORS tắt, preflight bị từ chối |
-| Đường dẫn | Không có API nhận đường dẫn tùy ý. Ảnh dự án chỉ được đọc nếu thuộc manifest. ZIP chỉ chứa output của phiên, tên entry đã làm sạch |
-| Upload | Tối đa 50 MB/file, 500 file/lần, 2 GB/phiên, 20 phiên. Kiểm tra nội dung bằng sharp (không tin tên/MIME). Từ chối khi ổ tạm sắp đầy |
-| Header | CSP `default-src 'self'`, `X-Frame-Options: DENY`, `nosniff`, `no-referrer` |
-| Dọn dẹp | Thư mục tạm riêng mỗi phiên (0700). Dọn khi idle 2 giờ, khi tắt server, và dọn phần còn sót của lần chạy bị crash trước đó |
+| Lớp           | Cơ chế                                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Mạng          | Chỉ listen `127.0.0.1`. Không có tùy chọn mở `0.0.0.0`                                                                              |
+| DNS rebinding | Chỉ chấp nhận `Host` là `127.0.0.1:<port>` hoặc `localhost:<port>`                                                                  |
+| Phiên         | Token bootstrap dùng một lần → cookie `HttpOnly; SameSite=Strict`. Token không nằm lâu trong URL hay log                            |
+| CSRF          | Request ghi cần `Origin` cùng gốc **và** header `X-Imgfit-CSRF`. CORS tắt, preflight bị từ chối                                     |
+| Đường dẫn     | Không có API nhận đường dẫn tùy ý. Ảnh dự án chỉ được đọc nếu thuộc manifest. ZIP chỉ chứa output của phiên, tên entry đã làm sạch  |
+| Upload        | Tối đa 50 MB/file, 500 file/lần, 2 GB/phiên, 20 phiên. Kiểm tra nội dung bằng sharp (không tin tên/MIME). Từ chối khi ổ tạm sắp đầy |
+| Header        | CSP `default-src 'self'`, `X-Frame-Options: DENY`, `nosniff`, `no-referrer`                                                         |
+| Dọn dẹp       | Thư mục tạm riêng mỗi phiên (0700). Dọn khi idle 2 giờ, khi tắt server, và dọn phần còn sót của lần chạy bị crash trước đó          |
 
 ---
 
@@ -515,16 +560,34 @@ imgfit <lệnh> --help
 ```json
 {
   "schemaVersion": 1,
-  "tool": { "name": "imgfit", "version": "0.1.0", "sharp": "0.35.5", "libvips": "8.18.7" },
+  "tool": {
+    "name": "imgfit",
+    "version": "0.1.0",
+    "sharp": "0.35.5",
+    "libvips": "8.18.7"
+  },
   "command": "run",
   "status": "ok",
   "dryRun": false,
   "startedAt": "2026-11-14T04:42:00.315Z",
   "elapsedMs": 212,
   "summary": {
-    "total": 2, "processed": 1, "created": 1, "replaced": 0, "unchanged": 1, "adopted": 0, "planned": 0,
-    "skipped": 0, "failed": 0, "cancelled": 0, "pass": 0, "warn": 0, "fail": 0,
-    "inputBytes": 421888, "outputBytes": 10035, "bytesSaved": 411853
+    "total": 2,
+    "processed": 1,
+    "created": 1,
+    "replaced": 0,
+    "unchanged": 1,
+    "adopted": 0,
+    "planned": 0,
+    "skipped": 0,
+    "failed": 0,
+    "cancelled": 0,
+    "pass": 0,
+    "warn": 0,
+    "fail": 0,
+    "inputBytes": 421888,
+    "outputBytes": 10035,
+    "bytesSaved": 411853
   },
   "files": [
     {
@@ -562,54 +625,54 @@ imgfit <lệnh> --help
 
 ### Exit code
 
-| Code | Ý nghĩa |
-|---|---|
-| `0` | Thành công (kể cả `unchanged`, bị skip có chủ đích, hoặc check chỉ có `warn` khi không `--strict`) |
-| `1` | Có file lỗi hoặc `fail`, hoặc batch bị dừng vì trùng đích |
-| `2` | Sai tham số, lệnh không tồn tại, config không có hoặc không hợp lệ, không tìm thấy input |
-| `3` | Lỗi quyền truy cập hoặc môi trường, dự án đang bị khóa (`E_LOCKED`) |
-| `130` | Bị hủy bằng Ctrl+C |
+| Code  | Ý nghĩa                                                                                            |
+| ----- | -------------------------------------------------------------------------------------------------- |
+| `0`   | Thành công (kể cả `unchanged`, bị skip có chủ đích, hoặc check chỉ có `warn` khi không `--strict`) |
+| `1`   | Có file lỗi hoặc `fail`, hoặc batch bị dừng vì trùng đích                                          |
+| `2`   | Sai tham số, lệnh không tồn tại, config không có hoặc không hợp lệ, không tìm thấy input           |
+| `3`   | Lỗi quyền truy cập hoặc môi trường, dự án đang bị khóa (`E_LOCKED`)                                |
+| `130` | Bị hủy bằng Ctrl+C                                                                                 |
 
 ### Mã lỗi (`E_*`)
 
-| Mã | Khi nào |
-|---|---|
-| `E_USAGE` | Tham số hoặc job sai |
-| `E_CONFIG_NOT_FOUND` / `E_CONFIG_INVALID` | Không tìm thấy, hoặc `imgfit.json` (hay names/crops/managed) sai; `details.problems` liệt kê từng lỗi |
-| `E_FORMAT_NOT_ALLOWED` | Định dạng output không nằm trong whitelist của profile |
-| `E_INPUT_NOT_FOUND` | Input, glob hoặc `roots.input` không tồn tại |
-| `E_INPUT_UNSUPPORTED` / `E_INPUT_CORRUPT` / `E_INPUT_ANIMATED` / `E_INPUT_TOO_LARGE` | Input không hỗ trợ / hỏng / ảnh động / vượt giới hạn pixel |
-| `E_SMALL_INPUT` | Ảnh nhỏ hơn đích và `smallInput: error` |
-| `E_FORMAT_UNSUPPORTED` | `format: keep` với TIFF/GIF |
-| `E_EXTENSION_MISMATCH` | Đuôi trong template không khớp định dạng output |
-| `E_NAME_MISSING` | Rule dùng `{id}` nhưng nguồn chưa có id |
-| `E_OUTPUT_CONFLICT` | Đích có sẵn và chưa do imgfit quản lý (hoặc là thư mục) |
-| `E_OUTPUT_MODIFIED` | Output đã bị sửa ngoài imgfit |
-| `E_OUTPUT_COLLISION` / `E_OUTPUT_SAME_AS_SOURCE` | Trùng đích / đích trùng nguồn: cả batch dừng |
-| `E_OUTPUT_INVALID` | Output encode xong nhưng sai: không publish |
-| `E_OUTPUT_MISSING` / `E_OUTPUT_STALE` / `E_OUTPUT_NOT_REPRODUCIBLE` | `check`: thiếu output / cần chạy lại `run` / encode lại cho kết quả khác byte |
-| `E_DIMENSIONS_MISMATCH` / `E_FORMAT_MISMATCH` / `E_BUDGET_EXCEEDED` | `check`: sai kích thước / sai định dạng hoặc đuôi / vượt ngân sách KB |
-| `E_PATH_UNSAFE` | Đích nằm ngoài thư mục output (kể cả qua symlink) |
-| `E_LOCKED` | Một `run` khác đang chạy trên dự án |
-| `E_PERMISSION` / `E_DISK_FULL` / `E_WRITE_FAILED` | Lỗi hệ thống file |
-| `E_FORBIDDEN` / `E_NOT_FOUND` / `E_STALE_CONFIRMATION` | Web UI: bị chặn / không tồn tại / xác nhận đã cũ |
-| `E_CANCELLED` / `E_INTERNAL` | Bị hủy / lỗi không phân loại (hãy báo lại kèm `--verbose`) |
+| Mã                                                                                   | Khi nào                                                                                               |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `E_USAGE`                                                                            | Tham số hoặc job sai                                                                                  |
+| `E_CONFIG_NOT_FOUND` / `E_CONFIG_INVALID`                                            | Không tìm thấy, hoặc `imgfit.json` (hay names/crops/managed) sai; `details.problems` liệt kê từng lỗi |
+| `E_FORMAT_NOT_ALLOWED`                                                               | Định dạng output không nằm trong whitelist của profile                                                |
+| `E_INPUT_NOT_FOUND`                                                                  | Input, glob hoặc `roots.input` không tồn tại                                                          |
+| `E_INPUT_UNSUPPORTED` / `E_INPUT_CORRUPT` / `E_INPUT_ANIMATED` / `E_INPUT_TOO_LARGE` | Input không hỗ trợ / hỏng / ảnh động / vượt giới hạn pixel                                            |
+| `E_SMALL_INPUT`                                                                      | Ảnh nhỏ hơn đích và `smallInput: error`                                                               |
+| `E_FORMAT_UNSUPPORTED`                                                               | `format: keep` với TIFF/GIF                                                                           |
+| `E_EXTENSION_MISMATCH`                                                               | Đuôi trong template không khớp định dạng output                                                       |
+| `E_NAME_MISSING`                                                                     | Rule dùng `{id}` nhưng nguồn chưa có id                                                               |
+| `E_OUTPUT_CONFLICT`                                                                  | Đích có sẵn và chưa do imgfit quản lý (hoặc là thư mục)                                               |
+| `E_OUTPUT_MODIFIED`                                                                  | Output đã bị sửa ngoài imgfit                                                                         |
+| `E_OUTPUT_COLLISION` / `E_OUTPUT_SAME_AS_SOURCE`                                     | Trùng đích / đích trùng nguồn: cả batch dừng                                                          |
+| `E_OUTPUT_INVALID`                                                                   | Output encode xong nhưng sai: không publish                                                           |
+| `E_OUTPUT_MISSING` / `E_OUTPUT_STALE` / `E_OUTPUT_NOT_REPRODUCIBLE`                  | `check`: thiếu output / cần chạy lại `run` / encode lại cho kết quả khác byte                         |
+| `E_DIMENSIONS_MISMATCH` / `E_FORMAT_MISMATCH` / `E_BUDGET_EXCEEDED`                  | `check`: sai kích thước / sai định dạng hoặc đuôi / vượt ngân sách KB                                 |
+| `E_PATH_UNSAFE`                                                                      | Đích nằm ngoài thư mục output (kể cả qua symlink)                                                     |
+| `E_LOCKED`                                                                           | Một `run` khác đang chạy trên dự án                                                                   |
+| `E_PERMISSION` / `E_DISK_FULL` / `E_WRITE_FAILED`                                    | Lỗi hệ thống file                                                                                     |
+| `E_FORBIDDEN` / `E_NOT_FOUND` / `E_STALE_CONFIRMATION`                               | Web UI: bị chặn / không tồn tại / xác nhận đã cũ                                                      |
+| `E_CANCELLED` / `E_INTERNAL`                                                         | Bị hủy / lỗi không phân loại (hãy báo lại kèm `--verbose`)                                            |
 
 ### Mã cảnh báo (`W_*`)
 
-| Mã | Ý nghĩa |
-|---|---|
-| `W_ALPHA_FLATTENED`, `W_DEFAULT_BACKGROUND` | Alpha bị flatten khi xuất JPG / đã dùng nền trắng mặc định |
-| `W_SMALL_INPUT_KEPT`, `W_SMALL_INPUT_PADDED` | Ảnh nhỏ: giữ kích thước nhỏ / đệm nền |
-| `W_BLOCK_ROUNDED` | Kích thước bị làm tròn xuống theo `blockMultiple` |
-| `W_SKIP_EXISTING_UNVERIFIED` | Bỏ qua vì đích có sẵn; output cũ không được kiểm tra |
-| `W_METADATA_KEPT` | Đang giữ metadata (có thể có GPS) |
-| `W_OUTPUT_UNMANAGED` | `check`: output có nhưng chưa nằm trong `imgfit.managed.json` |
-| `W_OUTPUT_ORPHAN` | Output được quản lý nhưng không còn rule/nguồn nào sinh ra |
-| `W_OUTPUT_MODIFIED` | Output bị sửa tay, đã được thay theo `--overwrite` |
-| `W_DUPLICATE_SOURCE` | Nhiều nguồn trùng nội dung trong cùng rule |
-| `W_VERSION_MISMATCH` | Version đang chạy khác `.imgfit-version` |
-| `W_STALE_LOCK`, `W_STATE_REBUILT` | Đã thay lock cũ / đã dựng lại cache hỏng |
+| Mã                                           | Ý nghĩa                                                       |
+| -------------------------------------------- | ------------------------------------------------------------- |
+| `W_ALPHA_FLATTENED`, `W_DEFAULT_BACKGROUND`  | Alpha bị flatten khi xuất JPG / đã dùng nền trắng mặc định    |
+| `W_SMALL_INPUT_KEPT`, `W_SMALL_INPUT_PADDED` | Ảnh nhỏ: giữ kích thước nhỏ / đệm nền                         |
+| `W_BLOCK_ROUNDED`                            | Kích thước bị làm tròn xuống theo `blockMultiple`             |
+| `W_SKIP_EXISTING_UNVERIFIED`                 | Bỏ qua vì đích có sẵn; output cũ không được kiểm tra          |
+| `W_METADATA_KEPT`                            | Đang giữ metadata (có thể có GPS)                             |
+| `W_OUTPUT_UNMANAGED`                         | `check`: output có nhưng chưa nằm trong `imgfit.managed.json` |
+| `W_OUTPUT_ORPHAN`                            | Output được quản lý nhưng không còn rule/nguồn nào sinh ra    |
+| `W_OUTPUT_MODIFIED`                          | Output bị sửa tay, đã được thay theo `--overwrite`            |
+| `W_DUPLICATE_SOURCE`                         | Nhiều nguồn trùng nội dung trong cùng rule                    |
+| `W_VERSION_MISMATCH`                         | Version đang chạy khác `.imgfit-version`                      |
+| `W_STALE_LOCK`, `W_STATE_REBUILT`            | Đã thay lock cũ / đã dựng lại cache hỏng                      |
 
 ---
 
@@ -630,10 +693,21 @@ Các ví dụ chạy được nằm trong [examples/](examples/).
 ```js
 import { run, check, resize, exec } from "imgfit";
 
-const report = await run({ cwd: "path/to/project", dryRun: false, onEvent: (e) => console.error(e.type, e.file) });
+const report = await run({
+  cwd: "path/to/project",
+  dryRun: false,
+  onEvent: (e) => console.error(e.type, e.file),
+});
 if (report.status !== "ok") process.exitCode = 1;
 
-const r = await resize({ inputs: ["raw"], output: "out", width: 256, height: 256, mode: "cover", format: "webp" });
+const r = await resize({
+  inputs: ["raw"],
+  output: "out",
+  width: 256,
+  height: 256,
+  mode: "cover",
+  format: "webp",
+});
 ```
 
 API còn có `check()`, `init()`, `exec()`, `watch()`, `info()`, `capabilities()`, `loadConfig()`, `buildManifest()`, `planTransform()`, `ImgfitError`, `exitCodeFor()` và đầy đủ type TypeScript. Lỗi trước khi chạy được **throw** dưới dạng `ImgfitError` (có `.code`); lỗi của từng file nằm trong report.
@@ -678,7 +752,7 @@ Trong PowerShell, đặt template trong **nháy đơn**: `--name '{dir}/{name}.{
 
 ### Unity (C#)
 
-[examples/unity/ImgfitMenu.cs](examples/unity/ImgfitMenu.cs) thêm menu *Tools/imgfit* (Run / Dry run / Check). Script gọi CLI bằng `ProcessStartInfo.ArgumentList`, rồi `AssetDatabase.Refresh()`. Ảnh được thay tại chỗ, nên `.meta`/GUID giữ nguyên. Dùng profile `unity` để chặn định dạng Unity không import (webp/avif).
+[examples/unity/ImgfitMenu.cs](examples/unity/ImgfitMenu.cs) thêm menu _Tools/imgfit_ (Run / Dry run / Check). Script gọi CLI bằng `ProcessStartInfo.ArgumentList`, rồi `AssetDatabase.Refresh()`. Ảnh được thay tại chỗ, nên `.meta`/GUID giữ nguyên. Dùng profile `unity` để chặn định dạng Unity không import (webp/avif).
 
 ### Lưu ý trên Windows
 
@@ -698,22 +772,23 @@ Số đo bằng `npm run bench` (3 lần mỗi case, lấy median):
 - **Máy đo:** Intel Core 5 210H (12 luồng), 16 GB RAM, Windows 11, Node 24.16, sharp 0.35.5, libvips 8.18.7.
 - **Peak RSS** của cả tiến trình benchmark: khoảng 410 MB.
 
-| Workload | jobs=1 | jobs=2 | jobs=4 | jobs=8 |
-|---|---|---|---|---|
-| 200 JPG 2400×2400 (781 MB) → 256×256 cover JPG | 10.8 s | 5.9 s | **3.2 s** | 3.0 s |
-| 10 PNG alpha 3000×3000 (359 MB) → fit 1024 PNG | 3.6 s | 2.0 s | **1.4 s** | 1.5 s |
-| `run` lại 200 ảnh không đổi (0 encode, vẫn hash 781 MB nguồn) | — | — | **0.8 s** | — |
-| `run` lại sau khi xóa `.imgfit/` cache (hash lại output, 0 encode) | — | — | **0.8 s** | — |
+| Workload                                                           | jobs=1 | jobs=2 | jobs=4    | jobs=8 |
+| ------------------------------------------------------------------ | ------ | ------ | --------- | ------ |
+| 200 JPG 2400×2400 (781 MB) → 256×256 cover JPG                     | 10.8 s | 5.9 s  | **3.2 s** | 3.0 s  |
+| 10 PNG alpha 3000×3000 (359 MB) → fit 1024 PNG                     | 3.6 s  | 2.0 s  | **1.4 s** | 1.5 s  |
+| `run` lại 200 ảnh không đổi (0 encode, vẫn hash 781 MB nguồn)      | —      | —      | **0.8 s** | —      |
+| `run` lại sau khi xóa `.imgfit/` cache (hash lại output, 0 encode) | —      | —      | **0.8 s** | —      |
 
 So sánh định dạng (200 JPG → 256×256 cover, jobs=4, quality mặc định):
 
 | Định dạng | Thời gian | Tổng output |
-|---|---|---|
-| JPG q85 | 3.2 s | 1.0 MB |
-| WebP q82 | 3.4 s | 0.3 MB |
-| AVIF q50 | 4.5 s | 0.1 MB |
+| --------- | --------- | ----------- |
+| JPG q85   | 3.2 s     | 1.0 MB      |
+| WebP q82  | 3.4 s     | 0.3 MB      |
+| AVIF q50  | 4.5 s     | 0.1 MB      |
 
 Nhận xét:
+
 - `jobs=4` (mặc định) đã gần mức bão hòa, vì bản thân libvips cũng chạy đa luồng.
 - Lần chạy đầu ngay sau khi sinh ảnh (đĩa còn bận ghi) chậm hơn đáng kể (khoảng 7 s cho workload JPG). Vì vậy hãy so sánh trên cache ấm, đo nhiều lần.
 - Kết quả trên máy bạn sẽ khác. Hãy tự chạy:
