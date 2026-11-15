@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { crc32 } from "node:zlib";
@@ -7,7 +7,8 @@ import { main } from "../src/cli/index.js";
 
 export async function tempDir(): Promise<{ dir: string; cleanup: () => Promise<void> }> {
   const dir = await mkdtemp(path.join(os.tmpdir(), "imgfit-test-"));
-  return { dir, cleanup: () => rm(dir, { recursive: true, force: true }) };
+  // Retries: on Windows libvips may release file handles slightly after the pipeline settles.
+  return { dir, cleanup: () => rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }) };
 }
 
 export async function solid(file: string, width: number, height: number, color: string, format: "jpg" | "png" | "webp" = "jpg"): Promise<void> {
@@ -36,7 +37,8 @@ export async function rgba(file: string, width: number, height: number, alpha: n
 
 /** Pixel colour at (x, y) of a saved image. */
 export async function pixel(file: string, x: number, y: number): Promise<{ r: number; g: number; b: number; a: number }> {
-  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  // Decode from a buffer so no libvips file handle stays open on the image (Windows locks).
+  const { data, info } = await sharp(await readFile(file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const i = (y * info.width + x) * 4;
   return { r: data[i] ?? 0, g: data[i + 1] ?? 0, b: data[i + 2] ?? 0, a: data[i + 3] ?? 0 };
 }
