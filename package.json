@@ -37,7 +37,6 @@
     "bench": "npm run build && node scripts/bench.mjs",
     "pretest": "npm run build:ui",
     "smoke": "node scripts/smoke-package.mjs",
-    "portable": "node scripts/build-portable.mjs",
     "docker": "docker build -t imgfit:0.1.0 ."
   },
   "keywords": [
@@ -62,7 +61,6 @@
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.11",
-    "postject": "^1.0.0-alpha.6",
     "typescript": "^5.9.3",
     "vite": "^8.3.8",
     "vitest": "^5.1.0",

@@ -4,7 +4,7 @@ import { EXIT, exitCodeFor, exitCodeForError } from "../core/exit.js";
 import type { Report } from "../core/report.js";
 import type { ProgressEvent } from "../pipeline/batch.js";
 import { versions } from "../version.js";
-import { errorDocument, printHumanReport, writeReportHtml, writeReportJson } from "./format.js";
+import { errorDocument, printHumanReport, writeReportJson } from "./format.js";
 
 export interface CliIO {
   stdout: { write(chunk: string): unknown };
@@ -67,7 +67,6 @@ export class CliContext {
     if (this.json) this.writeJson(report);
     else printHumanReport(report, (s) => this.line(s), o.quiet as boolean, o.verbose as boolean);
     if (o.reportJson) await writeReportJson(this.resolve(o.reportJson as string), report);
-    if (o.reportHtml) await writeReportHtml(this.resolve(o.reportHtml as string), report);
     this.exitCode = exitCodeFor(report);
   }
 

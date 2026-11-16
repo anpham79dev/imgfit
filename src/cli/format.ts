@@ -5,7 +5,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Issue } from "../core/errors.js";
 import { type FileResult, RESULT_SCHEMA_VERSION, type Report } from "../core/report.js";
-import { renderReportHtml } from "../core/report-html.js";
 import { TOOL_NAME, versions } from "../version.js";
 
 export function formatBytes(n: number | null): string {
@@ -96,4 +95,3 @@ async function writeText(file: string, text: string): Promise<void> {
 }
 
 export const writeReportJson = (file: string, report: unknown) => writeText(file, `${JSON.stringify(report, null, 2)}\n`);
-export const writeReportHtml = (file: string, report: Report) => writeText(file, renderReportHtml(report));

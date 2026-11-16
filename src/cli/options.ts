@@ -8,12 +8,11 @@ import type { OnConflict } from "../io/publish.js";
 import { intArg } from "./parsers.js";
 import type { Opts } from "./context.js";
 
-/** --json, --report-json/html, --quiet, --verbose */
+/** --json, --report-json, --quiet, --verbose */
 export function withOutputOptions(cmd: Command): Command {
   return cmd
     .option("--json", "stdout chỉ chứa JSON report; log ghi stderr", false)
     .option("--report-json <file>", "ghi thêm JSON report ra file")
-    .option("--report-html <file>", "ghi thêm report HTML (một file tĩnh) ra file")
     .option("--quiet", "chỉ in lỗi và tổng kết", false)
     .option("--verbose", "in cả file không đổi, cảnh báo và version", false);
 }
