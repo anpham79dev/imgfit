@@ -18,8 +18,6 @@ export { init, sampleConfig } from "./commands/init.js";
 export type { InitOptions, InitResult } from "./commands/init.js";
 export { exec, parseExecSpec } from "./commands/exec.js";
 export type { ExecSpec, ExecItem, ExecOptions } from "./commands/exec.js";
-export { watch } from "./commands/watch.js";
-export type { WatchOptions, WatchTrigger } from "./commands/watch.js";
 export { info, capabilities } from "./commands/info.js";
 export type { ImageInfo, Capabilities } from "./commands/info.js";
 

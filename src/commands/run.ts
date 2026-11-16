@@ -33,7 +33,7 @@ export interface RunOptions extends ProjectOptions {
   yes?: boolean;
   /** Asks the user before adopting; false = cancel. Without it (and without `yes`) adoption is an error. */
   confirm?: (destinations: string[]) => Promise<boolean>;
-  /** Only process matching sources (used by --watch). Orphans are not reported when filtered. */
+  /** Only process matching sources. Orphans are not reported when filtered. */
   filter?: (m: SourceMatch) => boolean;
   signal?: AbortSignal;
   onEvent?: (event: ProgressEvent) => void;

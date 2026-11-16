@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { check, exec, init, parseExecSpec, run, watch } from "../../src/index.js";
+import { check, exec, init, parseExecSpec, run } from "../../src/index.js";
 import type { Report } from "../../src/index.js";
 import { listFiles, runCli, solid, tempDir } from "../helpers.js";
 
@@ -364,30 +364,5 @@ describe("exec", () => {
       { cwd: dir },
     );
     expect(r2.status).toBe("aborted");
-  });
-});
-
-describe("watch", () => {
-  it("chạy lần đầu rồi chỉ xử lý nguồn vừa đổi", async () => {
-    const ac = new AbortController();
-    const reports: Array<{ trigger: string; report: Report }> = [];
-    const done = watch({
-      cwd: dir,
-      debounceMs: 100,
-      signal: ac.signal,
-      onReport: (report, trigger) => {
-        reports.push({ trigger, report });
-        if (reports.length === 2) ac.abort();
-      },
-    });
-    while (reports.length < 1) await new Promise((r) => setTimeout(r, 50));
-    expect(reports[0]?.report.summary.created).toBe(2);
-    await new Promise((r) => setTimeout(r, 200));
-    await solid(src("photos/a.jpg"), 300, 200, "#00ffff");
-    const timeout = setTimeout(() => ac.abort(), 15_000);
-    await done;
-    clearTimeout(timeout);
-    expect(reports[1]?.trigger).toBe("change");
-    expect(reports[1]?.report.files.map((f) => [f.destination, f.status])).toEqual([["out/a.webp", "replaced"]]);
   });
 });
