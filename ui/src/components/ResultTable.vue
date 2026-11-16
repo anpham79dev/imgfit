@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { type FileResult, formatBytes, px, saved } from "../api";
 
-defineProps<{ files: FileResult[]; downloadBase?: string; outputs?: Array<{ index: number; name: string }>; selectable?: boolean; selected?: string | null }>();
-const emit = defineEmits<{ select: [FileResult] }>();
+defineProps<{ files: FileResult[]; downloadBase?: string; outputs?: Array<{ index: number; name: string }> }>();
 const hasOutput = (outputs: Array<{ index: number }> | undefined, i: number) => outputs?.some((o) => o.index === i);
 </script>
 
@@ -21,12 +20,7 @@ const hasOutput = (outputs: Array<{ index: number }> | undefined, i: number) => 
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="(f, i) in files"
-          :key="`${f.file}→${f.destination}`"
-          :class="[`st-${f.status}`, { clickable: selectable, selected: selected === f.destination }]"
-          @click="selectable && emit('select', f)"
-        >
+        <tr v-for="(f, i) in files" :key="`${f.file}→${f.destination}→${f.preset}`" :class="`st-${f.status}`">
           <td><span class="pill" :class="`st-${f.status}`">{{ f.status }}{{ f.action && f.status === "planned" ? ` · ${f.action}` : "" }}</span></td>
           <td class="path">{{ f.file }}</td>
           <td class="path">{{ f.destination ?? "—" }}</td>

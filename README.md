@@ -2,7 +2,7 @@
 
 Engine xử lý ảnh dùng chung: resize, chuyển định dạng, gắn watermark. Ứng dụng backend (PHP, Python, Node, shell…) gọi imgfit để chuẩn bị các bản ảnh trước khi tự upload lên storage (R2, S3…). Gọi qua CLI, nhận lại report JSON.
 
-- **Hành vi rõ ràng, có test**: không phóng to ảnh nhỏ, cả hai chiều luôn nằm trong khung, xoay theo EXIF, bỏ GPS/metadata, nền trắng khi PNG trong suốt sang JPG. Mọi quy tắc nằm trong [docs/behavior.md](docs/behavior.md), mỗi quy tắc có test trên bộ ảnh mẫu.
+- **Hành vi rõ ràng, có test**: không phóng to ảnh nhỏ, cả hai chiều luôn nằm trong khung, xoay theo EXIF, bỏ GPS/metadata, nền trắng khi PNG trong suốt sang JPG. Mỗi quy tắc có test trên bộ ảnh mẫu (`test/behavior/`).
 - **Một nguồn cấu hình**: preset (`L`, `LL`, `O`…) và watermark khai báo một lần trong `imgfit.json`, dùng được từ mọi ngôn ngữ.
 - **Report giải thích từng ảnh**: kích thước, dung lượng, tên file cuối cùng, vị trí watermark, lý do bỏ qua, cảnh báo.
 - **Một engine** (libvips qua [sharp](https://sharp.pixelplumbing.com/)): kết quả giống nhau trên mọi máy.
@@ -96,7 +96,7 @@ imgfit tìm `imgfit.json` theo thứ tự: `--config <file>` (hoặc `"config"` 
 | `stripMetadata` | `true` | Bỏ EXIF/GPS/XMP/ICC và chuyển sRGB |
 | `jpeg.progressive` | `true` | JPEG progressive |
 | `png` | `{ "compressionLevel": 6, "palette": false }` | |
-| `keepSmallerSource` | `true` | Output cùng định dạng, cùng kích thước mà nặng hơn ảnh gốc → dùng ảnh gốc (xem [R15](docs/behavior.md)) |
+| `keepSmallerSource` | `true` | Output cùng định dạng, cùng kích thước mà nặng hơn ảnh gốc → dùng ảnh gốc, kèm `W_OUTPUT_LARGER`; chỉ khi ảnh gốc không có metadata/ICC, orientation 1, sRGB và output không có watermark |
 | `prefix` | `""` | Tiền tố tên file, dùng qua `{prefix}` |
 | `watermark` | không | Tên một mục trong `watermarks` |
 
@@ -306,7 +306,7 @@ Server chỉ dành cho máy của bạn: chỉ listen `127.0.0.1`, chặn `Host`
 - Input: JPEG, PNG, WebP, AVIF, TIFF, GIF tĩnh (xác định theo nội dung file). Không hỗ trợ ảnh động (GIF/APNG/WebP nhiều frame), HEIC, RAW, PDF.
 - Output: JPEG, PNG, WebP, AVIF.
 - Mặc định giới hạn ~268 MP mỗi ảnh (`--max-pixels` để đổi).
-- Encode AVIF chậm hơn JPEG 3–6 lần (số đo trong [docs/behavior.md](docs/behavior.md)).
+- Encode AVIF chậm hơn JPEG 3–6 lần.
 
 ## Phát triển
 
@@ -342,7 +342,6 @@ ui/                   # Vue 3 + Vite
 schema/               # JSON Schema công khai: config, result, info, job
 scripts/              # samples, compare/, bench, smoke-package
 test/{unit,integration,behavior}/
-docs/behavior.md      # quy tắc xử lý + số đo so sánh
 ```
 
 Quy ước: mọi thay đổi làm khác bytes output với cùng input và tùy chọn phải tăng `PIPELINE_VERSION` trong [src/core/fingerprint.ts](src/core/fingerprint.ts). Test chỉ dùng ảnh tự sinh, không commit ảnh có bản quyền.

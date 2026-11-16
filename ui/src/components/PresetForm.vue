@@ -7,7 +7,7 @@ const props = defineProps<{ presets: PresetOption[] }>();
 const model = defineModel<TransformForm>({ required: true });
 
 const quick = computed(() => props.presets.filter((p) => p.group === "quick"));
-const project = computed(() => props.presets.filter((p) => p.group === "project"));
+const fromConfig = computed(() => props.presets.filter((p) => p.group === "config"));
 
 function apply(key: string) {
   const p = props.presets.find((x) => x.key === key);
@@ -35,8 +35,8 @@ function apply(key: string) {
       Preset
       <select @change="apply(($event.target as HTMLSelectElement).value)">
         <option value="">— tùy chỉnh —</option>
-        <optgroup v-if="project.length" label="Dự án (imgfit.json)">
-          <option v-for="p in project" :key="p.key" :value="p.key">{{ p.label }}</option>
+        <optgroup v-if="fromConfig.length" label="imgfit.json">
+          <option v-for="p in fromConfig" :key="p.key" :value="p.key">{{ p.label }}</option>
         </optgroup>
         <optgroup label="Dựng sẵn">
           <option v-for="p in quick" :key="p.key" :value="p.key">{{ p.label }}</option>

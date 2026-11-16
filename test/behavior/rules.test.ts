@@ -1,5 +1,5 @@
 /**
- * One test per rule of docs/behavior.md, on generated sample images (scripts/samples.mjs).
+ * One test per image-processing rule, on generated sample images (scripts/samples.mjs).
  */
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile } from "node:fs/promises";

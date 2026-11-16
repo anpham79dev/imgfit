@@ -24,11 +24,11 @@ export function systemRoutes(ctx: ServerContext): Router {
   r.get(
     "/presets",
     route(async (_req, res) => {
-      const project = await ctx
+      const config = await ctx
         .loadPresets()
         .then((cfg) => Object.fromEntries([...cfg.presets].map(([k, p]) => [k, { ...p.transform }])))
         .catch(() => ({})); // no/invalid imgfit.json → built-in presets only
-      res.json({ quick: QUICK_PRESETS, project });
+      res.json({ quick: QUICK_PRESETS, config });
     }),
   );
 

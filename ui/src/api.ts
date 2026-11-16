@@ -11,7 +11,6 @@ export interface FileResult {
   destination: string | null;
   status: string;
   action: string | null;
-  rule: string | null;
   preset: string | null;
   format: string | null;
   inputBytes: number | null;
@@ -19,6 +18,7 @@ export interface FileResult {
   inputPx: [number, number] | null;
   outputPx: [number, number] | null;
   elapsedMs: number;
+  watermark: { name: string; left?: number; top?: number; width?: number; height?: number; skipped?: string } | null;
   fingerprint: string | null;
   warnings: Issue[];
   errors: Issue[];

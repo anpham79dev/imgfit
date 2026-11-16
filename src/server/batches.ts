@@ -15,7 +15,7 @@ export interface BatchOutput {
 
 export interface Batch {
   id: string;
-  kind: "quick" | "project";
+  kind: "quick";
   sessionId?: string;
   status: BatchStatus;
   createdAt: number;

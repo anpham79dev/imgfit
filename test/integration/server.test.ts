@@ -92,12 +92,8 @@ beforeAll(async () => {
   await writeFile(
     path.join(dir, "imgfit.json"),
     JSON.stringify({
-      schemaVersion: 1,
-      roots: { input: "src-img", output: "out" },
+      schemaVersion: 2,
       presets: { thumb: { size: [64, 64], mode: "cover", format: "webp" } },
-      rules: [
-        { id: "photos", from: "photos/*.jpg", preset: "thumb", to: "{name}.{ext}" },
-      ],
     }),
   );
   LIMITS.fileBytes = 200 * 1024; // test the upload limit without a 50 MB file
@@ -160,6 +156,12 @@ describe("báº£o máº­t server cá»¥c bá»™", () => {
 });
 
 describe("resize nhanh qua API", () => {
+  it("preset: dựng sẵn + preset của imgfit.json", async () => {
+    const r = (await req("GET", "/api/v1/presets", { headers: authed() })).json();
+    expect(r.config.thumb).toMatchObject({ width: 64, height: 64, mode: "cover", format: "webp" });
+    expect(Object.keys(r.quick).length).toBeGreaterThan(0);
+  });
+
   let sid: string;
   const ids: string[] = [];
 

@@ -1,7 +1,6 @@
 /**
  * Bounded-concurrency execution of prepared jobs with explicit destinations, plus progress events.
- * Used by `resize`, `exec` and the web UI's quick mode (no managed state). `run` has its own decision
- * step (managed/unchanged) but emits the same events.
+ * Used by `resize`, `exec` and the web UI.
  */
 import { randomBytes } from "node:crypto";
 import { lstat } from "node:fs/promises";

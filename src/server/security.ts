@@ -34,7 +34,7 @@ function readCookie(req: Request, name: string): string | undefined {
 }
 
 /**
- * Protection layers for the loopback server (docs/plan.md §5.3):
+ * Protection layers for the loopback server:
  * 1. Host allowlist → defeats DNS rebinding.
  * 2. One-time bootstrap token → HttpOnly SameSite=Strict cookie (the token never lingers in URLs/logs).
  * 3. Every request needs the session cookie.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Prints the Markdown tables of docs/behavior.md from a compare.mjs results.json.
+ * Prints Markdown tables from a compare.mjs results.json.
  *   node scripts/compare/report.mjs [results.json]
  */
 import { readFile } from "node:fs/promises";

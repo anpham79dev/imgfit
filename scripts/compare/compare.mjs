@@ -7,7 +7,7 @@
  *
  *   npm run build && node scripts/compare/compare.mjs [--work <dir>] [--no-huge] [--json <file>]
  *
- * Writes <work>/results.json and prints Markdown tables (pasted into docs/behavior.md).
+ * Writes <work>/results.json; scripts/compare/report.mjs prints it as Markdown tables.
  */
 import { spawnSync } from "node:child_process";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";

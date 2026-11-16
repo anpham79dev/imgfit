@@ -16,7 +16,6 @@ export interface CliIO {
   isTTY?: boolean;
   /** Reads all of stdin (for `exec --stdin`). */
   readStdin?: () => Promise<string>;
-  env?: NodeJS.ProcessEnv;
 }
 
 /** Parsed commander options of one command. */

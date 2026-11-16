@@ -1,6 +1,6 @@
 /**
  * One unit of work — a source image, a transform and a destination — and the shared steps every
- * front-end (resize / run / exec / web UI) uses:
+ * front-end (resize / exec / web UI) uses:
  *   prepare (probe + plan) → preflight collisions → encode to a temp file → verify → publish safely.
  */
 import { mkdir } from "node:fs/promises";
@@ -26,7 +26,7 @@ export interface Job {
   result: FileResult;
   probe?: ProbeResult;
   plan?: TransformPlan;
-  /** caller-specific data (rule, sourceRel, …) */
+  /** caller-specific data (variant, output template, …) */
   meta?: Record<string, unknown>;
 }
 
