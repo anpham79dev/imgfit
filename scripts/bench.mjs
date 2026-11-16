@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Baseline benchmark (docs/plan.md §7.2). Images are GENERATED (gaussian noise, as hard to compress as real photos);
+ * Baseline benchmark. Images are GENERATED (gaussian noise, as hard to compress as real photos);
  * no copyrighted images are used.
  *
  *   npm run bench                     # default: 200 JPG 2400×2400 → 256×256 cover; 10 PNG 3000×3000 → fit 1024
@@ -14,8 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import sharp from "sharp";
-import { writeFile } from "node:fs/promises";
-import { resize, run, versions } from "../dist/index.js";
+import { resize, versions } from "../dist/index.js";
 
 const { values } = parseArgs({
   options: {
@@ -93,31 +92,6 @@ for (const w of workloads.filter((w) => !w.name.startsWith("0 "))) {
     });
     process.stderr.write(`  jobs=${jobs}: median ${(results.at(-1).medianMs / 1000).toFixed(2)}s\n`);
   }
-}
-
-// Re-run with nothing changed (incremental): the first run is untimed, then the "unchanged" runs are measured.
-if (Number(values.count) > 0) {
-  const proj = path.join(root, "proj");
-  await rm(proj, { recursive: true, force: true });
-  await mkdir(proj, { recursive: true });
-  await writeFile(path.join(proj, "imgfit.json"), JSON.stringify({ schemaVersion: 1, roots: { input: path.join(root, "jpg"), output: "out" }, presets: { t: { size: [256, 256], mode: "cover", format: "jpg" } }, rules: [{ id: "all", from: "*.jpg", preset: "t", to: "{name}.{ext}" }] }));
-  const first = await run({ cwd: proj, jobs: 4 });
-  const times = [];
-  for (let r = 0; r < repeat; r++) {
-    const t0 = performance.now();
-    const rep = await run({ cwd: proj, jobs: 4 });
-    times.push(performance.now() - t0);
-    if (rep.summary.unchanged !== first.summary.created) throw new Error("run lần hai không phải toàn bộ unchanged");
-  }
-  // drop the cache: outputs must be re-hashed (still no re-encoding)
-  await rm(path.join(proj, ".imgfit"), { recursive: true, force: true });
-  const t1 = performance.now();
-  const cold = await run({ cwd: proj, jobs: 4 });
-  const coldMs = performance.now() - t1;
-  if (cold.summary.unchanged !== first.summary.created) throw new Error("run sau khi xóa cache không phải toàn bộ unchanged");
-  times.sort((a, b) => a - b);
-  results.push({ workload: `run lại ${first.summary.created} ảnh không đổi (0 encode)`, jobs: 4, runs: repeat, medianMs: Math.round(times[Math.floor(times.length / 2)]), minMs: Math.round(times[0]), maxMs: Math.round(times.at(-1)), inputBytes: 0, outputBytes: 0 });
-  results.push({ workload: `run lại sau khi xóa .imgfit/cache (hash lại output, 0 encode)`, jobs: 4, runs: 1, medianMs: Math.round(coldMs), minMs: Math.round(coldMs), maxMs: Math.round(coldMs), inputBytes: 0, outputBytes: 0 });
 }
 
 const env = {
