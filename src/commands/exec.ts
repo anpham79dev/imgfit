@@ -31,6 +31,7 @@ export interface ExecItem {
   sharpen?: number;
   stripMetadata?: boolean;
   png?: { compressionLevel?: number; palette?: boolean };
+  jpeg?: { progressive?: boolean };
 }
 
 export interface ExecSpec {
@@ -50,7 +51,7 @@ export interface ExecOptions {
 }
 
 /** Inline options that may override a preset, in the order they are applied. */
-const OVERRIDES = ["mode", "format", "quality", "position", "focalPoint", "background", "smallInput", "upscale", "sharpen", "stripMetadata", "png"] as const;
+const OVERRIDES = ["mode", "format", "quality", "position", "focalPoint", "background", "smallInput", "upscale", "sharpen", "stripMetadata", "png", "jpeg"] as const;
 
 /** Parses + validates job JSON (schema/job.schema.json). */
 export async function parseExecSpec(text: string): Promise<ExecSpec> {

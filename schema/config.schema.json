@@ -57,6 +57,11 @@
         "background": { "$ref": "#/$defs/color" },
         "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },
         "stripMetadata": { "type": "boolean" },
+        "jpeg": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "progressive": { "type": "boolean", "default": true } }
+        },
         "png": {
           "type": "object",
           "additionalProperties": false,

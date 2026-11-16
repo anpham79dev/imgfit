@@ -30,6 +30,8 @@ export interface TransformOptions {
   /** Default true: drop EXIF/XMP/ICC after converting to sRGB. */
   stripMetadata?: boolean;
   png?: { compressionLevel?: number; palette?: boolean };
+  /** progressive: default true (renders gradually on slow connections, usually a little smaller). */
+  jpeg?: { progressive?: boolean };
   limitInputPixels?: number;
 }
 
@@ -103,5 +105,6 @@ export function effectiveOptions(t: TransformOptions, outputFormat: OutputFormat
     sharpen: t.sharpen,
     stripMetadata: t.stripMetadata ?? true,
     png: t.png,
+    progressive: outputFormat === "jpg" ? (t.jpeg?.progressive ?? true) : undefined,
   };
 }

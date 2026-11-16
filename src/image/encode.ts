@@ -51,7 +51,7 @@ function applyGeometry(img: Sharp, src: ProbeResult, plan: TransformPlan, opts: 
 function applyEncoder(img: Sharp, format: OutputFormat, opts: TransformOptions): Sharp {
   switch (format) {
     case "jpg":
-      return img.jpeg({ quality: opts.quality ?? DEFAULT_QUALITY.jpg, mozjpeg: false });
+      return img.jpeg({ quality: opts.quality ?? DEFAULT_QUALITY.jpg, progressive: opts.jpeg?.progressive ?? true, mozjpeg: false });
     case "png": {
       const palette = opts.png?.palette ?? false;
       return img.png({ compressionLevel: opts.png?.compressionLevel ?? 6, palette, ...(palette ? { quality: opts.quality ?? DEFAULT_QUALITY.png } : {}) });

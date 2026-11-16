@@ -39,6 +39,7 @@ export function parseTransform(input: unknown): TransformOptions & { name: strin
     ...pick("sharpen"),
     ...pick("stripMetadata"),
     ...(b.png && typeof b.png === "object" ? { png: b.png as TransformOptions["png"] } : {}),
+    ...(b.jpeg && typeof b.jpeg === "object" ? { jpeg: { progressive: (b.jpeg as { progressive?: unknown }).progressive !== false } } : {}),
   } as TransformOptions;
   if (t.position === "focal") delete t.position; // focal points are per file
   validateTransformOptions(t);

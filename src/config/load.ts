@@ -34,6 +34,7 @@ export function resolvePreset(name: string, p: PresetConfig): ResolvedPreset {
     ...(p.position ? { position: p.position } : {}),
     ...(p.sharpen !== undefined ? { sharpen: p.sharpen } : {}),
     ...(p.png ? { png: p.png } : {}),
+    ...(p.jpeg ? { jpeg: p.jpeg } : {}),
   };
   try {
     validateTransformOptions(transform);

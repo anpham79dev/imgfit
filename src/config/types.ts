@@ -18,6 +18,7 @@ export interface PresetConfig {
   background?: string;
   sharpen?: number;
   stripMetadata?: boolean;
+  jpeg?: { progressive?: boolean };
   png?: { compressionLevel?: number; palette?: boolean };
 }
 
