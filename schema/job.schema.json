@@ -45,7 +45,7 @@
             "properties": { "x": { "type": "number", "minimum": 0, "maximum": 1 }, "y": { "type": "number", "minimum": 0, "maximum": 1 } }
           },
           "background": { "type": "string" },
-          "smallInput": { "enum": ["error", "keep", "pad"] },
+          "smallInput": { "enum": ["error", "keep", "pad", "skip"] },
           "upscale": { "type": "boolean" },
           "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },
           "stripMetadata": { "type": "boolean" },

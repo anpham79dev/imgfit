@@ -38,7 +38,7 @@
         "format": { "enum": ["keep", "jpg", "png", "webp", "avif"], "default": "keep" },
         "quality": { "$ref": "#/$defs/quality" },
         "upscale": { "type": "boolean" },
-        "smallInput": { "enum": ["error", "keep", "pad"] },
+        "smallInput": { "enum": ["error", "keep", "pad", "skip"], "description": "Ảnh nhỏ hơn khung: error (báo lỗi) · keep (giữ cỡ nhỏ) · pad (đệm nền) · skip (không tạo output, status skipped)" },
         "position": { "enum": ["center", "top", "attention"] },
         "background": { "$ref": "#/$defs/color" },
         "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },

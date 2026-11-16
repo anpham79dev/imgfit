@@ -50,8 +50,13 @@ export async function prepareJob(job: Job): Promise<void> {
     const plan = planTransform(p, job.transform);
     job.plan = plan;
     r.format = plan.outputFormat;
-    r.outputPx = [plan.outputSize.width, plan.outputSize.height];
     r.warnings.push(...plan.warnings);
+    if (plan.skip) {
+      r.status = "skipped";
+      r.format = null;
+    } else {
+      r.outputPx = [plan.outputSize.width, plan.outputSize.height];
+    }
   } catch (err) {
     fail(r, err);
   }
@@ -77,7 +82,7 @@ export function detectCollisions(jobs: Job[]): Issue[] {
   const byKey = new Map<string, Job[]>();
   const sourceKeys = new Set(jobs.map((j) => collisionKey(j.source)));
   for (const j of jobs) {
-    if (!j.dest || j.result.status === "failed") continue;
+    if (!j.dest || j.result.status !== "planned") continue;
     const key = collisionKey(j.dest);
     if (sourceKeys.has(key)) {
       const issue = new ImgfitError("E_OUTPUT_SAME_AS_SOURCE", `Output trùng với một file nguồn: ${j.result.destination}`, {

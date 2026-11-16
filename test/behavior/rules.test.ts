@@ -50,6 +50,27 @@ describe("hành vi: kích thước", () => {
     expect(f.outputPx).toEqual([300, 200]);
   });
 
+  it("smallInput=skip: ảnh nhỏ hơn khung → skipped kèm lý do, không ghi file, không lỗi", async () => {
+    const r = await exec(
+      {
+        schemaVersion: 1,
+        jobs: [
+          { input: path.relative(dir, sample("small-300x200.jpg")), output: "skip/LL.jpg", size: [1600, 1200], format: "jpg", smallInput: "skip" },
+          { input: path.relative(dir, sample("small-300x200.jpg")), output: "skip/L.jpg", size: [200, 100], format: "jpg", smallInput: "skip" },
+        ],
+      },
+      { cwd: dir },
+    );
+    expect(r.status).toBe("ok");
+    const [ll, l] = r.files;
+    expect(ll?.status).toBe("skipped");
+    expect(ll?.warnings[0]).toMatchObject({ code: "W_SMALL_INPUT_SKIPPED", details: { source: [300, 200], target: [1600, 1200] } });
+    expect(ll?.outputBytes).toBeNull();
+    expect(l?.status).toBe("created");
+    expect(r.summary).toMatchObject({ created: 1, skipped: 1, failed: 0 });
+    await expect(readFile(path.join(dir, "skip/LL.jpg"))).rejects.toThrow();
+  });
+
   it("xoay theo EXIF rồi bỏ tag orientation (orientation 6: 3000×2000 lưu → 800×1200 hiển thị)", async () => {
     const { file } = await one("exif-6.jpg");
     const m = await meta(file);

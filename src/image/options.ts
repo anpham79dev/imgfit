@@ -1,6 +1,6 @@
 import { ImgfitError } from "../core/errors.js";
 import type { FormatOption, OutputFormat } from "./formats.js";
-import type { CropPosition, Mode, Point, SmallInputPolicy } from "./geometry.js";
+import { type CropPosition, type Mode, type Point, SMALL_INPUT_POLICIES, type SmallInputPolicy } from "./geometry.js";
 
 /** Default input pixel limit (≈ 268 MP, same as sharp's default). Guards against decompression bombs. */
 export const DEFAULT_LIMIT_INPUT_PIXELS = 268_402_689;
@@ -17,7 +17,7 @@ export interface TransformOptions {
   quality?: number;
   /** Default false: never enlarge small inputs. */
   upscale?: boolean;
-  /** Default depends on mode: fit → keep, cover/pad → error. */
+  /** Input smaller than the target (see isSmallInput). Default depends on mode: fit → keep, cover/pad → error. skip = no output. */
   smallInput?: SmallInputPolicy;
   /** Cover only. Default center. */
   position?: CropPosition;
@@ -65,7 +65,7 @@ export function validateTransformOptions(opts: TransformOptions): void {
   intIn("quality", opts.quality, 1, 100);
   intIn("png.compressionLevel", opts.png?.compressionLevel, 0, 9);
   if (!["fit", "cover", "pad"].includes(opts.mode)) throw new ImgfitError("E_USAGE", `mode không hợp lệ: ${opts.mode}`);
-  if (opts.smallInput && !["error", "keep", "pad"].includes(opts.smallInput)) {
+  if (opts.smallInput && !SMALL_INPUT_POLICIES.includes(opts.smallInput)) {
     throw new ImgfitError("E_USAGE", `smallInput không hợp lệ: ${opts.smallInput}`);
   }
   if (opts.position && !["center", "top", "attention", "focal"].includes(opts.position)) {

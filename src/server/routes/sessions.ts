@@ -80,7 +80,7 @@ export function sessionRoutes(ctx: ServerContext): Router {
       const f = sessions.file(s, b.fileId);
       const job = quickJob(ctx, s, f.id, parseTransform(b.options), isPoint(b.focal) ? b.focal : undefined);
       await prepareJob(job);
-      if (job.result.status === "failed" || !job.plan) {
+      if (job.result.status !== "planned" || !job.plan) {
         res.status(400).json({ errors: job.result.errors, warnings: job.result.warnings });
         return;
       }

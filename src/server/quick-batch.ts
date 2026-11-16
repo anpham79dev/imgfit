@@ -37,7 +37,7 @@ async function assignDestinations(jobs: Job[], t: QuickTransform, outDir: string
   await Promise.all(
     jobs.map(async (j) => {
       await prepareJob(j);
-      if (j.result.status === "failed" || !j.plan) return;
+      if (j.result.status !== "planned" || !j.plan) return;
       try {
         const rel = renderTemplate(t.name, { name: path.parse(j.meta?.name as string).name, ext: j.plan.outputFormat, w: t.width, h: t.height, dir: "" });
         const dest = path.resolve(outDir, rel);

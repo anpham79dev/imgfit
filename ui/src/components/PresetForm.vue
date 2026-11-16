@@ -78,6 +78,7 @@ function apply(key: string) {
         <option value="error">báo lỗi</option>
         <option value="keep">giữ kích thước nhỏ</option>
         <option value="pad">đệm nền</option>
+        <option value="skip">bỏ qua (không tạo output)</option>
       </select>
     </label>
     <label>Màu nền <input v-model="model.background" type="text" placeholder="#ffffff" pattern="#[0-9a-fA-F]{3,8}" /></label>

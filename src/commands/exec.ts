@@ -104,7 +104,7 @@ export async function exec(spec: ExecSpec, opts: ExecOptions = {}): Promise<Repo
       limit(async () => {
         if (j.result.status === "failed") return;
         await prepareJob(j);
-        if ((j.result.status as string) === "failed" || !j.plan) return;
+        if ((j.result.status as string) !== "planned" || !j.plan) return;
         try {
           const dest = path.resolve(cwd, j.meta?.output as string);
           j.result.destination = displayPath(cwd, dest);

@@ -91,7 +91,7 @@ export async function resize(opts: ResizeOptions): Promise<Report> {
     jobs.map((j) =>
       limit(async () => {
         await prepareJob(j);
-        if (j.result.status === "failed" || !j.plan) return;
+        if (j.result.status !== "planned" || !j.plan) return;
         try {
           const rel = renderTemplate(template, {
             name: path.parse(j.source).name,

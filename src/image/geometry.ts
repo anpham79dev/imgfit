@@ -3,7 +3,8 @@
  */
 
 export type Mode = "fit" | "cover" | "pad";
-export type SmallInputPolicy = "error" | "keep" | "pad";
+export type SmallInputPolicy = "error" | "keep" | "pad" | "skip";
+export const SMALL_INPUT_POLICIES: readonly SmallInputPolicy[] = ["error", "keep", "pad", "skip"];
 export type CropPosition = "center" | "top" | "attention" | "focal";
 
 export interface Size {

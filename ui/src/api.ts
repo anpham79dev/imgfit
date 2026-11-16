@@ -47,7 +47,7 @@ export interface TransformForm {
   quality?: number | null;
   position?: "center" | "top" | "attention";
   background?: string;
-  smallInput?: "" | "error" | "keep" | "pad";
+  smallInput?: "" | "error" | "keep" | "pad" | "skip";
   upscale?: boolean;
   stripMetadata?: boolean;
   name?: string;

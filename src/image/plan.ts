@@ -16,6 +16,8 @@ export type PlanOp =
   | { kind: "contain"; inner: Size };
 
 export interface TransformPlan {
+  /** smallInput=skip and the input is small: nothing is written; the reason is in `warnings`. */
+  skip: boolean;
   outputFormat: OutputFormat;
   outputSize: Size;
   op: PlanOp;
@@ -37,6 +39,13 @@ export function planTransform(src: ProbeResult, opts: TransformOptions): Transfo
   const policy: SmallInputPolicy = opts.smallInput ?? (opts.mode === "fit" ? "keep" : "error");
   const position: CropPosition = opts.position ?? (opts.focalPoint ? "focal" : "center");
   const small = !allowUp && isSmallInput(source, target, opts.mode);
+  if (small && policy === "skip") {
+    const reason = warning("W_SMALL_INPUT_SKIPPED", `Ảnh ${source.width}×${source.height} nhỏ hơn khung ${target.width}×${target.height}; bỏ qua preset (smallInput=skip)`, {
+      source: [source.width, source.height],
+      target: [target.width, target.height],
+    });
+    return { skip: true, outputFormat, outputSize: source, op: { kind: "inside", size: source }, flatten: false, background: { r: 0, g: 0, b: 0, alpha: 0 }, warnings: [reason] };
+  }
 
   const { op, outputSize } = small ? planSmallInput(source, target, opts, policy, position, warnings) : planNormal(source, target, opts, allowUp, position);
 
@@ -45,7 +54,7 @@ export function planTransform(src: ProbeResult, opts: TransformOptions): Transfo
   if (flatten) warnings.push(warning("W_ALPHA_FLATTENED", "Ảnh có alpha, đã flatten lên nền khi xuất JPG (mất trong suốt)"));
   if (opts.stripMetadata === false) warnings.push(warning("W_METADATA_KEPT", "Giữ metadata (EXIF/XMP/ICC) — có thể chứa thông tin cá nhân như GPS"));
 
-  return { outputFormat, outputSize, op, flatten, background, warnings };
+  return { skip: false, outputFormat, outputSize, op, flatten, background, warnings };
 }
 
 interface Planned {

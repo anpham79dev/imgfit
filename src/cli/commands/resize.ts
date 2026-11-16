@@ -58,7 +58,7 @@ export function registerResize(program: Command, ctx: CliContext): void {
     .addOption(new Option("--position <pos>", "điểm crop cho cover").choices(["center", "top", "attention", "focal"]))
     .option("--focal <x,y>", "focal point chuẩn hóa [0,1] trên ảnh đã xoay theo EXIF (ngầm đặt --position focal)", parseFocal)
     .option("--background <hex>", "màu nền cho pad và khi flatten alpha → JPG, vd. #ffffff")
-    .addOption(new Option("--small-input <policy>", "khi ảnh nhỏ hơn target: error | keep | pad (mặc định: fit→keep, cover/pad→error)").choices(["error", "keep", "pad"]))
+    .addOption(new Option("--small-input <policy>", "khi ảnh nhỏ hơn target: error | keep | pad | skip (mặc định: fit→keep, cover/pad→error)").choices(["error", "keep", "pad", "skip"]))
     .option("--upscale", "cho phép phóng to ảnh nhỏ (mặc định tắt)", false)
     .option("--sharpen [sigma]", "sharpen sau khi giảm cỡ (sigma 0.3–10, mặc định 1)", parseSigma)
     .option("--keep-metadata", "giữ EXIF/XMP/ICC (mặc định bỏ, chuyển sRGB)", false)
