@@ -16,6 +16,16 @@ Tài liệu này mô tả imgfit làm gì với từng ảnh. Mỗi quy tắc c�
 | R8 | Không bao giờ ghi đè ảnh gốc, kể cả khi bật ghi đè | `E_OUTPUT_SAME_AS_SOURCE` |
 | R9 | Xuất JPG, PNG, WebP hoặc AVIF theo từng preset | `format` |
 | R10 | Cùng một engine (libvips qua sharp) trên mọi máy | |
+| R11 | Ảnh nhỏ hơn khung: bỏ qua preset, output `skipped` kèm `W_SMALL_INPUT_SKIPPED` (kích thước ảnh và khung trong `details`). Không phải lỗi | `smallInput: "skip"` |
+| R12 | Giữ định dạng nếu nằm trong danh sách, ngược lại dùng định dạng fallback (GIF, TIFF, JPG… → JPG). `"keep"` đơn thuần vẫn báo `E_FORMAT_UNSUPPORTED` khi không giữ được | `format: { "keep": ["png", "webp"], "fallback": "jpg" }`, CLI `--keep png,webp -f jpg` |
+| R13 | JPEG progressive (mặc định). Trên bộ mẫu nhẹ hơn baseline 0,8% (L) và 1,8% (LL) | `jpeg.progressive`, CLI `--no-progressive` |
+| R14 | Quality mặc định: JPG 80 (giống imgproxy), WebP 82, AVIF 50 | `quality` |
+| R15 | Output cùng định dạng, cùng kích thước với ảnh vào mà **nặng hơn** → dùng ảnh gốc, kèm `W_OUTPUT_LARGER`. Chỉ khi ảnh gốc không có EXIF/XMP/IPTC/ICC, orientation 1, sRGB và output không có watermark; nếu không thì giữ bản encode và vẫn cảnh báo (`details.usedSource`, `details.reason`) | `keepSmallerSource` (mặc định bật), CLI `--no-keep-smaller-source` |
+| R16 | Tên file theo hash nội dung: `{hash}` = 16 ký tự hex đầu của SHA-256 output cuối cùng (sau watermark, sau R15). Cùng ảnh → cùng key. Key đã tồn tại → không ghi lại, `skipped` + `W_SAME_CONTENT_EXISTS`, report vẫn có tên cuối cùng. `{hash}` chỉ được nằm trong tên file. Khi `--dry-run`, tên còn nguyên `{hash}` | `--name "{prefix}{hash}.{ext}"`, `output` của exec |
+| R17 | Preset và watermark khai báo một lần trong `imgfit.json`, dùng chung cho `resize --preset`, `exec`, UI. Tùy chọn gõ trên CLI ghi đè preset, giá trị mặc định của CLI thì không | `presets`, `prefix`, `{prefix}` |
+| R18 | Watermark gắn **sau** resize. Logo scale **đều** theo % (hoặc px) chiều rộng output, chiều cao theo tỉ lệ logo, không méo, không crop. Logo quá lớn được thu nhỏ đều cho vừa. 9 vị trí, offset theo % hoặc px của output, luôn nằm trọn trong ảnh. Output nhỏ hơn `minOutput` → không gắn, `W_WATERMARK_SKIPPED`. Report ghi vị trí và kích thước logo (`watermark`) | `watermarks.<tên>`, preset `watermark`, CLI `--watermark` / `--no-watermark` |
+
+Chưa đổi theo so sánh: `sharpen` vẫn tắt mặc định. PSNR so với bản resize chuẩn không đo được lợi ích của sharpen, cần so bằng mắt trên ảnh thật trước khi bật mặc định.
 
 ## 2. So sánh với Intervention Image và imgproxy
 
