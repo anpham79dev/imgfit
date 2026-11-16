@@ -23,8 +23,8 @@ export function sampleConfig(): ConfigFile {
     $schema: "./imgfit.schema.json",
     schemaVersion: CONFIG_SCHEMA_VERSION,
     presets: {
-      L: { size: [640, 480], mode: "fit", smallInput: "keep", format: "jpg" },
-      LL: { size: [1600, 1200], mode: "fit", smallInput: "keep", format: "jpg" },
+      L: { size: [640, 480], mode: "fit", smallInput: "keep", format: { keep: ["png", "webp"], fallback: "jpg" }, prefix: "L_" },
+      LL: { size: [1600, 1200], mode: "fit", smallInput: "skip", format: { keep: ["png", "webp"], fallback: "jpg" }, prefix: "LL_" },
       O: { size: [2100, 1400], mode: "fit", smallInput: "keep", format: "jpg" },
     },
   };

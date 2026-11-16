@@ -34,6 +34,7 @@
           "maxItems": 2,
           "description": "[width, height]"
         },
+        "prefix": { "type": "string", "pattern": "^[^/\\\\{}]*$", "maxLength": 64, "description": "Tiền tố tên file, dùng qua {prefix} (template mặc định \"{prefix}{name}.{ext}\")." },
         "mode": { "enum": ["fit", "cover", "pad"], "default": "fit" },
         "format": {
           "description": "keep: giữ định dạng input (lỗi nếu không giữ được) · jpg/png/webp/avif · {keep, fallback}: giữ nếu nằm trong keep, ngược lại dùng fallback",

@@ -57,3 +57,13 @@ export function parseFormatList(value: string): OutputFormat[] {
     throw new InvalidArgumentError((err as Error).message);
   }
 }
+
+/** "L,LL,O" → ["L", "LL", "O"]. */
+export function parseNameList(value: string): string[] {
+  const list = value
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v !== "");
+  if (list.length === 0) throw new InvalidArgumentError("danh sách rỗng");
+  return list;
+}

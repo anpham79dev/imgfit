@@ -42,7 +42,7 @@ export function resolvePreset(name: string, p: PresetConfig): ResolvedPreset {
   } catch (err) {
     throw new ImgfitError("E_CONFIG_INVALID", `preset "${name}": ${(err as Error).message}`);
   }
-  return { name, transform };
+  return { name, prefix: p.prefix ?? "", transform };
 }
 
 /** Loads imgfit.json and resolves every preset. */

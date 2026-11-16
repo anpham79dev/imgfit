@@ -5,7 +5,10 @@ import { ImgfitError } from "../core/errors.js";
 import { isInside } from "../core/paths.js";
 import { newFileResult, type Report } from "../core/report.js";
 import { renderTemplate, validateTemplate } from "../core/template.js";
-import { type TransformOptions, validateTransformOptions } from "../image/options.js";
+import { findConfig } from "../config/find.js";
+import { loadConfig } from "../config/load.js";
+import { resolveVariants, type Variant } from "../config/variants.js";
+import type { TransformOptions } from "../image/options.js";
 import { collectInputs } from "../io/inputs.js";
 import type { OnConflict } from "../io/publish.js";
 import { executeJobs, type ProgressEvent } from "../pipeline/batch.js";
@@ -13,19 +16,25 @@ import { assertExtension, displayPath, fail, type Job, prepareJob } from "../pip
 
 export const DEFAULT_JOBS = 4;
 export const MAX_JOBS = 64;
-export const DEFAULT_NAME_TEMPLATE = "{name}.{ext}";
+export const DEFAULT_NAME_TEMPLATE = "{prefix}{name}.{ext}";
 
-export interface ResizeOptions extends TransformOptions {
+/**
+ * Either presets (from imgfit.json; any transform field given here overrides them) or an explicit
+ * transform (width + height required).
+ */
+export interface ResizeOptions extends Partial<TransformOptions> {
   /** Files, directories or globs. Relative paths resolve against `cwd`. */
   inputs: string[];
   /** Output directory. */
   output: string;
   /** Descend into sub-directories when an input is a directory. */
   recursive?: boolean;
-  /** Output name template, default "{name}.{ext}". Placeholders: {name} {ext} {w} {h} {preset} {dir}. */
+  /** Output name template, default "{prefix}{name}.{ext}". Placeholders: {name} {ext} {w} {h} {preset} {prefix} {dir} {hash}. */
   name?: string;
-  /** Preset label recorded in the report and available as {preset}. */
-  preset?: string;
+  /** Preset names from imgfit.json; each input produces one output per preset. */
+  presets?: string[];
+  /** imgfit.json path (default: IMGFIT_CONFIG, then search upward from cwd). Only read when presets are used. */
+  config?: string;
   /** Images processed in parallel, default 4. */
   jobs?: number;
   /** Plan only: no directories, no files written. */
@@ -49,7 +58,6 @@ export function validateJobs(jobs: number): void {
 }
 
 export function validateResizeOptions(opts: ResizeOptions): void {
-  validateTransformOptions(opts);
   if (!opts.output || opts.output.trim() === "") throw new ImgfitError("E_USAGE", "Cần --output <thư mục>");
   validateJobs(opts.jobs ?? DEFAULT_JOBS);
   if (opts.onConflict && !["error", "replace", "skip"].includes(opts.onConflict)) {
@@ -76,15 +84,19 @@ export async function resize(opts: ResizeOptions): Promise<Report> {
   const outputRoot = path.resolve(cwd, opts.output);
   const template = opts.name ?? DEFAULT_NAME_TEMPLATE;
   const concurrency = opts.jobs ?? DEFAULT_JOBS;
+  const cfg = opts.presets?.length ? await loadConfig(await findConfig(cwd, opts.config)) : undefined;
+  const variants = resolveVariants(opts.presets, opts, cfg);
   await assertOutputDir(outputRoot, opts.output);
 
   const inputs = await collectInputs(opts.inputs, { cwd, recursive: opts.recursive ?? false });
-  const jobs: Job[] = inputs.map((input) => ({
-    source: input.abs,
-    transform: opts,
-    result: newFileResult(displayPath(cwd, input.abs), { preset: opts.preset ?? null }),
-    meta: { dir: input.dir },
-  }));
+  const jobs: Job[] = inputs.flatMap((input) =>
+    variants.map((v) => ({
+      source: input.abs,
+      transform: v.transform,
+      result: newFileResult(displayPath(cwd, input.abs), { preset: v.preset }),
+      meta: { dir: input.dir, variant: v },
+    })),
+  );
 
   const limit = pLimit(concurrency);
   await Promise.all(
@@ -93,12 +105,14 @@ export async function resize(opts: ResizeOptions): Promise<Report> {
         await prepareJob(j);
         if (j.result.status !== "planned" || !j.plan) return;
         try {
+          const v = j.meta?.variant as Variant;
           const rel = renderTemplate(template, {
             name: path.parse(j.source).name,
             ext: j.plan.outputFormat,
-            w: opts.width,
-            h: opts.height,
-            ...(opts.preset ? { preset: opts.preset } : {}),
+            w: j.transform.width,
+            h: j.transform.height,
+            prefix: v.prefix,
+            ...(v.preset ? { preset: v.preset } : {}),
             dir: (j.meta?.dir as string) ?? "",
           });
           const dest = path.resolve(outputRoot, rel);

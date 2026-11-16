@@ -126,3 +126,52 @@ describe("exec", () => {
     expect(r2.status).toBe("aborted");
   });
 });
+
+describe("preset dùng chung (imgfit.json)", () => {
+  const presetCfg = () => ({
+    schemaVersion: 2,
+    presets: {
+      L: { size: [64, 48], mode: "fit", format: { keep: ["png", "webp"], fallback: "jpg" }, prefix: "L_" },
+      LL: { size: [160, 120], mode: "fit", smallInput: "skip", format: "jpg", prefix: "LL_" },
+      O: { size: [250, 250], mode: "fit", format: "jpg" },
+    },
+  });
+
+  it("resize --preset L,LL,O: một output mỗi preset, tên theo {prefix}, report ghi preset", async () => {
+    await writeConfig(presetCfg());
+    const r = await runCli(["resize", "src-img/a.jpg", "--preset", "L,LL,O", "-o", "out", "--json"], dir);
+    expect(r.code).toBe(0);
+    const report = JSON.parse(r.stdout);
+    expect(report.files.map((f: { preset: string; destination: string; outputPx: number[] }) => [f.preset, f.destination, f.outputPx])).toEqual([
+      ["L", "out/L_a.jpg", [64, 43]],
+      ["LL", "out/LL_a.jpg", [160, 107]],
+      ["O", "out/a.jpg", [250, 167]],
+    ]);
+    // a source smaller than LL is skipped by the preset, not an error
+    await solid(path.join(dir, "src-img", "tiny.png"), 100, 80, "#00ff00", "png");
+    const small = await runCli(["resize", "src-img/tiny.png", "--preset", "L,LL", "-o", "out2", "--json"], dir);
+    const s = JSON.parse(small.stdout);
+    expect(s.files.map((f: { status: string; format: string | null }) => [f.status, f.format])).toEqual([
+      ["created", "png"],
+      ["skipped", null],
+    ]);
+  });
+
+  it("tùy chọn gõ trên CLI ghi đè preset; giá trị mặc định của CLI thì không", async () => {
+    await writeConfig(presetCfg());
+    const r = JSON.parse((await runCli(["resize", "src-img/a.jpg", "--preset", "L", "-f", "webp", "-o", "out", "--json"], dir)).stdout);
+    expect(r.files[0]).toMatchObject({ destination: "out/L_a.webp", format: "webp" });
+    // --mode defaults to fit on the CLI but must not override a cover preset
+    await writeConfig({ schemaVersion: 2, presets: { sq: { size: [50, 50], mode: "cover", format: "jpg" } } });
+    const c = JSON.parse((await runCli(["resize", "src-img/a.jpg", "--preset", "sq", "-o", "out3", "--json"], dir)).stdout);
+    expect(c.files[0].outputPx).toEqual([50, 50]);
+  });
+
+  it("preset không tồn tại / thiếu cả --size lẫn --preset → exit 2; exec dùng {prefix}", async () => {
+    await writeConfig(presetCfg());
+    expect((await runCli(["resize", "src-img/a.jpg", "--preset", "XL", "-o", "out", "--json"], dir)).code).toBe(2);
+    expect((await runCli(["resize", "src-img/a.jpg", "-o", "out", "--json"], dir)).code).toBe(2);
+    const r = await exec({ schemaVersion: 1, jobs: [{ input: "src-img/a.jpg", output: "e/{prefix}{name}.{ext}", preset: "LL" }] }, { cwd: dir });
+    expect(r.files[0]?.destination).toBe("e/LL_a.jpg");
+  });
+});

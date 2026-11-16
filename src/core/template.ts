@@ -2,7 +2,7 @@ import { ImgfitError } from "./errors.js";
 import { sanitizeSegment } from "./paths.js";
 
 /** Placeholders allowed in output name templates. This list is a public contract. */
-export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir", "hash"] as const;
+export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "prefix", "dir", "hash"] as const;
 
 /** {hash} is left in the rendered path as this token and resolved after encoding (pipeline/content-name.ts). */
 export const HASH_TOKEN = "{hash}";
@@ -15,6 +15,8 @@ export interface TemplateVars {
   w: number;
   h: number;
   preset?: string;
+  /** the preset's file-name prefix (may be empty) */
+  prefix?: string;
   /** relative sub-directory (posix, may be empty) */
   dir: string;
   /** content hash; normally absent so the token is kept until the output exists */
@@ -60,6 +62,8 @@ function placeholderValue(key: Placeholder, vars: TemplateVars): string {
     case "preset":
       if (!vars.preset) throw new ImgfitError("E_USAGE", "Template dùng {preset} nhưng không có preset");
       return sanitizeSegment(vars.preset);
+    case "prefix":
+      return vars.prefix ? sanitizeSegment(vars.prefix).replace(/[{}]/g, "_") : "";
     case "dir":
       return DIR_MARK; // expanded per segment below
     case "hash":

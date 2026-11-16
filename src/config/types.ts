@@ -9,6 +9,8 @@ export const CONFIG_SCHEMA_VERSION = 2;
 
 export interface PresetConfig {
   size: [number, number];
+  /** File-name prefix, available as {prefix} (default template "{prefix}{name}.{ext}"). */
+  prefix?: string;
   mode?: Mode;
   format?: FormatOption;
   quality?: number;
@@ -33,6 +35,7 @@ export interface ConfigFile {
 
 export interface ResolvedPreset {
   name: string;
+  prefix: string;
   transform: TransformOptions;
 }
 

@@ -6,13 +6,14 @@ import { newFileResult, type Report } from "../core/report.js";
 import { renderTemplate } from "../core/template.js";
 import type { FormatOption } from "../image/formats.js";
 import type { CropPosition, Mode, Point, SmallInputPolicy } from "../image/geometry.js";
-import { type TransformOptions, validateTransformOptions } from "../image/options.js";
+import type { TransformOptions } from "../image/options.js";
 import type { OnConflict } from "../io/publish.js";
 import { executeJobs, type ProgressEvent } from "../pipeline/batch.js";
 import { assertExtension, displayPath, fail, type Job, prepareJob } from "../pipeline/job.js";
 import { findConfig } from "../config/find.js";
 import { loadConfig } from "../config/load.js";
 import type { PresetConfigSet } from "../config/types.js";
+import { resolveVariants, type Variant } from "../config/variants.js";
 import { validateWith } from "../config/validate.js";
 
 /** One job of an exec spec (mirrors schema/job.schema.json). */
@@ -52,9 +53,6 @@ export interface ExecOptions {
   onEvent?: (event: ProgressEvent) => void;
 }
 
-/** Inline options that may override a preset, in the order they are applied. */
-const OVERRIDES = ["mode", "format", "quality", "position", "focalPoint", "background", "smallInput", "upscale", "sharpen", "stripMetadata", "png", "jpeg", "keepSmallerSource"] as const;
-
 /** Parses + validates job JSON (schema/job.schema.json). */
 export async function parseExecSpec(text: string): Promise<ExecSpec> {
   let data: unknown;
@@ -67,16 +65,10 @@ export async function parseExecSpec(text: string): Promise<ExecSpec> {
 }
 
 /** Preset (if any) overlaid with the item's inline options. Throws on invalid combinations. */
-function transformFor(item: ExecItem, cfg: PresetConfigSet | undefined): TransformOptions {
-  const base = item.preset ? cfg?.presets.get(item.preset)?.transform : undefined;
-  if (item.preset && !base) throw new ImgfitError("E_USAGE", `Preset "${item.preset}" không có trong config`);
-  const size = item.size ?? (base ? [base.width, base.height] : undefined);
-  if (!size) throw new ImgfitError("E_USAGE", "Job cần preset hoặc size");
-  const t: TransformOptions = { ...(base ?? { mode: "fit", format: "keep" }), width: size[0], height: size[1] } as TransformOptions;
-  for (const k of OVERRIDES) if (item[k] !== undefined) Object.assign(t, { [k]: item[k] });
-  if (t.focalPoint && !item.position) t.position = "focal";
-  validateTransformOptions(t);
-  return t;
+function variantFor(item: ExecItem, cfg: PresetConfigSet | undefined): Variant {
+  const { input: _i, output: _o, preset, size, ...inline } = item;
+  const overrides: Partial<TransformOptions> = { ...inline, ...(size ? { width: size[0], height: size[1] } : {}) };
+  return resolveVariants(preset ? [preset] : undefined, overrides, cfg)[0] as Variant;
 }
 
 /**
@@ -92,13 +84,13 @@ export async function exec(spec: ExecSpec, opts: ExecOptions = {}): Promise<Repo
   const jobs: Job[] = spec.jobs.map((item) => {
     const source = path.resolve(cwd, item.input);
     const result = newFileResult(displayPath(cwd, source), { preset: item.preset ?? null });
-    let transform: TransformOptions = { width: 1, height: 1, mode: "fit", format: "keep" };
+    let variant: Variant = { preset: null, prefix: "", transform: { width: 1, height: 1, mode: "fit", format: "keep" } };
     try {
-      transform = transformFor(item, cfg);
+      variant = variantFor(item, cfg);
     } catch (err) {
       fail(result, err);
     }
-    return { source, transform, result, meta: { output: item.output } };
+    return { source, transform: variant.transform, result, meta: { output: item.output, variant } };
   });
 
   const limit = pLimit(spec.concurrency ?? 4);
@@ -112,7 +104,15 @@ export async function exec(spec: ExecSpec, opts: ExecOptions = {}): Promise<Repo
           const output = j.meta?.output as string;
           // an output with placeholders ({name} {ext} {hash}…) is a name template, relative to cwd
           const rel = output.includes("{")
-            ? renderTemplate(output, { name: path.parse(j.source).name, ext: j.plan.outputFormat, w: j.transform.width, h: j.transform.height, dir: "", ...(j.result.preset ? { preset: j.result.preset } : {}) })
+            ? renderTemplate(output, {
+                name: path.parse(j.source).name,
+                ext: j.plan.outputFormat,
+                w: j.transform.width,
+                h: j.transform.height,
+                dir: "",
+                prefix: (j.meta?.variant as Variant).prefix,
+                ...(j.result.preset ? { preset: j.result.preset } : {}),
+              })
             : output;
           const dest = path.resolve(cwd, rel);
           j.result.destination = displayPath(cwd, dest);
