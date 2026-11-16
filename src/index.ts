@@ -12,8 +12,6 @@ export { resize, validateResizeOptions, DEFAULT_JOBS, DEFAULT_NAME_TEMPLATE } fr
 export type { ResizeOptions } from "./commands/resize.js";
 export { run } from "./commands/run.js";
 export type { RunOptions } from "./commands/run.js";
-export { check, validateOutput } from "./commands/check.js";
-export type { CheckOptions, CheckMode } from "./commands/check.js";
 export { init, sampleConfig } from "./commands/init.js";
 export type { InitOptions, InitResult } from "./commands/init.js";
 export { exec, parseExecSpec } from "./commands/exec.js";

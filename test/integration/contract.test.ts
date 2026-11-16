@@ -26,7 +26,7 @@ beforeEach(async () => {
 afterEach(async () => cleanup());
 
 describe("JSON contract", () => {
-  it("resize / run / check / dry-run / lỗi tham số đều khớp result.schema.json", async () => {
+  it("resize / run / dry-run / lỗi tham số đều khớp result.schema.json", async () => {
     const validate = new Ajv2020({ allErrors: true, strict: false }).compile(await load("result"));
     const outputs = [
       await runCli(["resize", "img", "-s", "32", "-m", "cover", "-o", "o1", "--json"], dir),
@@ -34,8 +34,6 @@ describe("JSON contract", () => {
       await runCli(["run", "--dry-run", "--json"], dir),
       await runCli(["run", "--json"], dir),
       await runCli(["run", "--json"], dir),
-      await runCli(["check", "--json"], dir),
-      await runCli(["check", "--check-mode", "output-only", "--json"], dir),
       await runCli(["resize", "img", "-s", "nope", "-o", "x", "--json"], dir),
       await runCli(["run", "--config", "missing.json", "--json"], dir),
     ];

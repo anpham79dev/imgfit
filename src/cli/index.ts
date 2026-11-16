@@ -2,7 +2,6 @@ import { Command, CommanderError } from "commander";
 import { EXIT } from "../core/exit.js";
 import { RESULT_SCHEMA_VERSION } from "../core/report.js";
 import { TOOL_VERSION, versions } from "../version.js";
-import { registerCheck } from "./commands/check.js";
 import { registerExec } from "./commands/exec.js";
 import { registerInit } from "./commands/init.js";
 import { registerInspect } from "./commands/inspect.js";
@@ -36,7 +35,6 @@ function buildProgram(ctx: CliContext): Command {
 
   registerResize(program, ctx);
   registerRun(program, ctx);
-  registerCheck(program, ctx);
   registerInit(program, ctx);
   registerExec(program, ctx);
   registerInspect(program, ctx);

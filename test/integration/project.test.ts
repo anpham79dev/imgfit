@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { check, exec, init, parseExecSpec, run } from "../../src/index.js";
+import { exec, init, parseExecSpec, run } from "../../src/index.js";
 import type { Report } from "../../src/index.js";
 import { listFiles, runCli, solid, tempDir } from "../helpers.js";
 
@@ -256,70 +256,6 @@ describe("run: incremental", () => {
     const r = await run({ cwd: dir });
     expect(r.warnings.map((w) => w.code)).toContain("W_STALE_LOCK");
     expect(await readdir(path.join(dir, ".imgfit", "locks"))).toEqual([]);
-  });
-});
-
-describe("check", () => {
-  async function snapshot(): Promise<Record<string, number>> {
-    const files = await listFiles(dir);
-    return Object.fromEntries(await Promise.all(files.map(async (f) => [f, (await stat(path.join(dir, f))).mtimeMs] as const)));
-  }
-
-  it("pass sau run; read-only tuyệt đối ở mọi mode", async () => {
-    await run({ cwd: dir });
-    const before = await snapshot();
-    for (const mode of ["standard", "output-only", "reproducible"] as const) {
-      const r = await check({ cwd: dir, mode });
-      expect(r.status, mode).toBe("ok");
-      expect(r.summary.pass, mode).toBe(2);
-    }
-    expect(await snapshot()).toEqual(before);
-  });
-
-  it("stale khi nguồn đổi; modified; missing; budget", async () => {
-    await run({ cwd: dir });
-    await solid(src("photos/a.jpg"), 300, 200, "#0000ff");
-    const r1 = await check({ cwd: dir });
-    expect(r1.status).toBe("failed");
-    expect(codes(r1)).toEqual(["E_OUTPUT_STALE"]);
-    // output-only cannot see sources → still passes (known limitation)
-    expect((await check({ cwd: dir, mode: "output-only" })).status).toBe("ok");
-
-    await run({ cwd: dir });
-    await writeFile(out("a.webp"), await readFile(out("sub/b.webp")));
-    expect(codes(await check({ cwd: dir, mode: "output-only" }))).toContain("E_OUTPUT_MODIFIED");
-
-    await rm(out("a.webp"));
-    expect(codes(await check({ cwd: dir }))).toContain("E_OUTPUT_MISSING");
-
-    await run({ cwd: dir });
-    const c = cfgBase();
-    (c.presets.thumb as { maxFileKB?: number }).maxFileKB = 0.01;
-    await writeConfig(c);
-    expect(codes(await check({ cwd: dir, mode: "output-only" }))).toContain("E_BUDGET_EXCEEDED");
-  });
-
-  it("chưa quản lý → warn; --strict → fail; lọc theo path", async () => {
-    await mkdir(path.join(dir, "out", "sub"), { recursive: true });
-    await sharp({ create: { width: 64, height: 64, channels: 3, background: "#fff" } }).webp().toFile(out("a.webp"));
-    await sharp({ create: { width: 64, height: 64, channels: 3, background: "#fff" } }).webp().toFile(out("sub/b.webp"));
-    const r = await check({ cwd: dir });
-    expect(r.summary.warn).toBe(2);
-    expect(r.status).toBe("ok");
-    expect((await check({ cwd: dir, strict: true })).status).toBe("failed");
-    const only = await check({ cwd: dir, paths: ["src-img/photos/a.jpg"] });
-    expect(only.files.map((f) => f.destination)).toEqual(["out/a.webp"]);
-    const all = await check({ cwd: dir, paths: ["imgfit.json"] });
-    expect(all.files).toHaveLength(2);
-  });
-
-  it("CLI: thiếu nguồn gợi ý output-only; exit code theo kết quả", async () => {
-    await run({ cwd: dir });
-    await rm(path.join(dir, "src-img"), { recursive: true });
-    const r = await runCli(["check", "--json"], dir);
-    expect(r.code).toBe(2);
-    expect(JSON.parse(r.stdout).errors[0].message).toContain("output-only");
-    expect((await runCli(["check", "--check-mode", "output-only"], dir)).code).toBe(0);
   });
 });
 
