@@ -258,9 +258,12 @@ describe("resize: ghi file an toàn", () => {
 
   it("không để lại file tạm; tên Unicode/khoảng trắng/reserved", async () => {
     await solid(raw("ảnh đẹp 1.jpg"), 300, 300, "#f00");
-    await solid(raw("CON.jpg"), 300, 300, "#0f0");
     const r = await resize(base({}));
     expect(r.status).toBe("ok");
+    // Windows 10 refuses to create a file named CON.jpg, so the reserved name comes from the template instead
+    await mkdir(path.join(dir, "raw2"), { recursive: true });
+    await solid(path.join(dir, "raw2", "plain.jpg"), 300, 300, "#0f0");
+    expect((await resize(base({ inputs: ["raw2"], name: "CON.{ext}" }))).status).toBe("ok");
     const files = await listFiles(path.join(dir, "out"));
     expect(files).toEqual(["_CON.jpg", "ảnh đẹp 1.jpg".normalize("NFC")].sort());
     expect(files.some((f) => f.endsWith(".tmp"))).toBe(false);
