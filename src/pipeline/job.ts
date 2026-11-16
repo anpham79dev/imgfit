@@ -141,7 +141,7 @@ export async function processJob(job: Job, opts: ProcessOptions): Promise<Proces
   }
 }
 
-/** Encodes to a caller-chosen file without publishing (check --reproducible, UI previews). */
+/** Encodes to a caller-chosen file without publishing (UI previews). */
 export async function encodeTo(job: Job, file: string): Promise<{ bytes: number; width: number; height: number; hash: string }> {
   const out = await transformToFile(job.source, file, job.probe as ProbeResult, job.plan as TransformPlan, job.transform);
   return { ...out, hash: `sha256:${await hashFile(file)}` };

@@ -6,14 +6,12 @@ import express from "express";
 import { createServerContext } from "./context.js";
 import { errorHandler } from "./http.js";
 import { batchRoutes } from "./routes/batches.js";
-import { projectRoutes } from "./routes/project.js";
 import { sessionRoutes } from "./routes/sessions.js";
 import { systemRoutes } from "./routes/system.js";
-import { writeRoutes } from "./routes/write.js";
 import { newSecrets, notFound, securityMiddleware } from "./security.js";
 
 export interface UiServerOptions {
-  /** Project root. With imgfit.json → project mode; without → quick resize only. */
+  /** Directory whose imgfit.json presets are offered in the UI (optional). */
   root?: string;
   /** 0 = random port. */
   port?: number;
@@ -52,7 +50,7 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<UiServe
   app.use(express.json({ limit: "2mb" }));
 
   const api = express.Router();
-  api.use(systemRoutes(ctx), sessionRoutes(ctx), batchRoutes(ctx), projectRoutes(ctx), writeRoutes(ctx));
+  api.use(systemRoutes(ctx), sessionRoutes(ctx), batchRoutes(ctx));
   app.use("/api/v1", api);
   app.use("/api", (_req, _res, next) => next(notFound("API")));
 

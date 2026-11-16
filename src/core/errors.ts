@@ -41,7 +41,6 @@ export const ERROR_CODES = [
   // web UI
   "E_FORBIDDEN",
   "E_NOT_FOUND",
-  "E_STALE_CONFIRMATION",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

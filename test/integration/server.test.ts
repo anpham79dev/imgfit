@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startUiServer, type UiServer } from "../../src/server/app.js";
 import { LIMITS } from "../../src/server/sessions.js";
-import { listFiles, solid, tempDir } from "../helpers.js";
+import { solid, tempDir } from "../helpers.js";
 
 let dir: string;
 let cleanup: () => Promise<void>;
@@ -42,7 +42,6 @@ const origin = () => `http://127.0.0.1:${server.port}`;
 const authed = (extra: Record<string, string> = {}) => ({ cookie, ...extra });
 const writeHeaders = (extra: Record<string, string> = {}) => authed({ origin: origin(), "x-imgfit-csrf": "1", "content-type": "application/json", ...extra });
 const post = (url: string, body: unknown, extra: Record<string, string> = {}) => req("POST", url, { headers: writeHeaders(extra), body: JSON.stringify(body) });
-const put = (url: string, body: unknown) => req("PUT", url, { headers: writeHeaders(), body: JSON.stringify(body) });
 
 function multipart(files: Array<{ name: string; data: Buffer }>): { body: Buffer; type: string } {
   const boundary = `----imgfit${Date.now()}`;
@@ -66,7 +65,7 @@ async function sseUntilDone(url: string, headers: Record<string, string> = {}): 
     });
 }
 
-/** Minimal ZIP reader: EOCD + central directory → name + data (STORE). */
+/** Minimal ZIP reader: EOCD + central directory â†’ name + data (STORE). */
 function readZip(buf: Buffer): Map<string, Buffer> {
   const eocd = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
   const count = buf.readUInt16LE(eocd + 10);
@@ -98,11 +97,9 @@ beforeAll(async () => {
       presets: { thumb: { size: [64, 64], mode: "cover", format: "webp" } },
       rules: [
         { id: "photos", from: "photos/*.jpg", preset: "thumb", to: "{name}.{ext}" },
-        { id: "named", from: "photos/*.jpg", preset: "thumb", to: "ids/{id}.{ext}", names: "imgfit.names.json" },
       ],
     }),
   );
-  await writeFile(path.join(dir, "imgfit.names.json"), JSON.stringify({ schemaVersion: 1, names: { "photos/a.jpg": "x1", "photos/b.jpg": "x2" } }));
   LIMITS.fileBytes = 200 * 1024; // test the upload limit without a 50 MB file
   server = await startUiServer({ root: dir, port: 0 });
 });
@@ -112,22 +109,22 @@ afterAll(async () => {
   await cleanup();
 });
 
-describe("bảo mật server cục bộ", () => {
-  it("chỉ listen 127.0.0.1, URL có token", () => {
+describe("báº£o máº­t server cá»¥c bá»™", () => {
+  it("chá»‰ listen 127.0.0.1, URL cÃ³ token", () => {
     expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?t=[\w-]+$/);
   });
 
-  it("Host lạ (DNS rebinding) → 403", async () => {
+  it("Host láº¡ (DNS rebinding) â†’ 403", async () => {
     const r = await req("GET", "/api/v1/health", { host: "evil.example:80" });
     expect(r.status).toBe(403);
   });
 
-  it("chưa có cookie → 401; token sai → 401", async () => {
+  it("chÆ°a cÃ³ cookie â†’ 401; token sai â†’ 401", async () => {
     expect((await req("GET", "/api/v1/health")).status).toBe(401);
     expect((await req("GET", "/?t=wrong")).status).toBe(401);
   });
 
-  it("token đúng → cookie HttpOnly SameSite=Strict + redirect bỏ token; token chỉ dùng một lần", async () => {
+  it("token Ä‘Ãºng â†’ cookie HttpOnly SameSite=Strict + redirect bá» token; token chá»‰ dÃ¹ng má»™t láº§n", async () => {
     const token = new URL(server.url).searchParams.get("t") as string;
     const r = await req("GET", `/?t=${token}`);
     expect(r.status).toBe(303);
@@ -147,17 +144,15 @@ describe("bảo mật server cục bộ", () => {
     expect(page.body.toString()).toContain('<div id="app">');
   });
 
-  it("request ghi: thiếu CSRF header / Origin lạ / preflight → bị chặn", async () => {
+  it("request ghi: thiáº¿u CSRF header / Origin láº¡ / preflight â†’ bá»‹ cháº·n", async () => {
     expect((await req("POST", "/api/v1/sessions", { headers: authed({ origin: origin() }) })).status).toBe(403);
     expect((await req("POST", "/api/v1/sessions", { headers: authed({ origin: "http://evil.example", "x-imgfit-csrf": "1" }) })).status).toBe(403);
     expect((await req("OPTIONS", "/api/v1/sessions", { headers: authed({ origin: "http://evil.example" }) })).status).toBe(403);
     expect((await post("/api/v1/sessions", {})).status).toBe(201);
   });
 
-  it("không đọc được file ngoài allowlist (traversal)", async () => {
-    expect((await req("GET", `/api/v1/project/image?source=${encodeURIComponent("../imgfit.json")}`, { headers: authed() })).status).toBe(403);
-    expect((await req("GET", `/api/v1/project/image?source=${encodeURIComponent("/etc/passwd")}`, { headers: authed() })).status).toBe(403);
-    expect((await req("GET", `/api/v1/project/output?dest=${encodeURIComponent("../../x")}`, { headers: authed() })).status).toBe(403);
+  it("khÃ´ng Ä‘á»c Ä‘Æ°á»£c file ngoÃ i allowlist (traversal)", async () => {
+    expect((await req("GET", `/api/v1/project/image?source=${encodeURIComponent("../imgfit.json")}`, { headers: authed() })).status).toBe(404);
     expect((await req("GET", "/api/v1/previews/..%2F..%2Fx", { headers: authed() })).status).toBe(404);
     expect((await req("GET", "/api/v1/sessions/nope/files", { headers: authed() })).status).toBe(404);
     expect((await req("GET", "/api/v1/fs?path=/", { headers: authed() })).status).toBe(404);
@@ -168,19 +163,19 @@ describe("resize nhanh qua API", () => {
   let sid: string;
   const ids: string[] = [];
 
-  it("upload: kiểm tra nội dung, từ chối file giả và file quá lớn", async () => {
+  it("upload: kiá»ƒm tra ná»™i dung, tá»« chá»‘i file giáº£ vÃ  file quÃ¡ lá»›n", async () => {
     sid = (await post("/api/v1/sessions", {})).json().id;
     const good = await readFile(path.join(dir, "src-img", "photos", "a.jpg"));
     const good2 = await readFile(path.join(dir, "src-img", "photos", "b.jpg"));
     const mp = multipart([
-      { name: "ảnh một.jpg", data: good },
+      { name: "áº£nh má»™t.jpg", data: good },
       { name: "hai.jpg", data: good2 },
       { name: "fake.jpg", data: Buffer.from("not an image") },
     ]);
     const r = await req("POST", `/api/v1/sessions/${sid}/uploads`, { headers: authed({ origin: origin(), "x-imgfit-csrf": "1", "content-type": mp.type }), body: mp.body });
     expect(r.status).toBe(201);
     const j = r.json();
-    expect(j.accepted.map((f: { name: string }) => f.name)).toEqual(["ảnh một.jpg", "hai.jpg"]);
+    expect(j.accepted.map((f: { name: string }) => f.name)).toEqual(["áº£nh má»™t.jpg", "hai.jpg"]);
     expect(j.rejected[0].error.code).toBe("E_INPUT_UNSUPPORTED");
     ids.push(...j.accepted.map((f: { id: string }) => f.id));
 
@@ -190,7 +185,7 @@ describe("resize nhanh qua API", () => {
     expect(r2.json().errors[0].message).toContain("LIMIT_FILE_SIZE");
   });
 
-  it("thumbnail + preview khớp kích thước output", async () => {
+  it("thumbnail + preview khá»›p kÃ­ch thÆ°á»›c output", async () => {
     const t = await req("GET", `/api/v1/sessions/${sid}/files/${ids[0]}/image?max=128`, { headers: authed() });
     expect(t.status).toBe(200);
     expect(t.headers["content-type"]).toContain("image/webp");
@@ -202,7 +197,7 @@ describe("resize nhanh qua API", () => {
     expect(bad.status).toBe(400);
   });
 
-  it("batch: SSE tới khi xong, reconnect bằng Last-Event-ID, tải file và ZIP", async () => {
+  it("batch: SSE tá»›i khi xong, reconnect báº±ng Last-Event-ID, táº£i file vÃ  ZIP", async () => {
     const b = await post("/api/v1/batches", { sessionId: sid, options: { width: 32, height: 32, mode: "cover", format: "jpg", name: "{name}-{w}.{ext}" } });
     expect(b.status).toBe(202);
     const id = b.json().batchId;
@@ -213,7 +208,7 @@ describe("resize nhanh qua API", () => {
     expect(replay.map((e) => e.event)).toEqual(["done"]);
 
     const info = (await req("GET", `/api/v1/batches/${id}`, { headers: authed() })).json();
-    expect(info.outputs.map((o: { name: string }) => o.name).sort()).toEqual(["hai-32.jpg", "ảnh một-32.jpg"].sort());
+    expect(info.outputs.map((o: { name: string }) => o.name).sort()).toEqual(["hai-32.jpg", "áº£nh má»™t-32.jpg"].sort());
     const one = await req("GET", `/api/v1/batches/${id}/files/0?download=1`, { headers: authed() });
     expect(one.status).toBe(200);
     expect(String(one.headers["content-disposition"])).toContain("attachment");
@@ -221,11 +216,11 @@ describe("resize nhanh qua API", () => {
     const zip = await req("GET", `/api/v1/batches/${id}/archive`, { headers: authed() });
     expect(zip.headers["content-type"]).toContain("application/zip");
     const entries = readZip(zip.body);
-    expect([...entries.keys()].sort()).toEqual(["hai-32.jpg", "ảnh một-32.jpg"].sort());
+    expect([...entries.keys()].sort()).toEqual(["hai-32.jpg", "áº£nh má»™t-32.jpg"].sort());
     expect(entries.get("hai-32.jpg")?.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8])); // JPEG SOI
   });
 
-  it("retry chỉ chạy lại file lỗi", async () => {
+  it("retry chá»‰ cháº¡y láº¡i file lá»—i", async () => {
     const b = await post("/api/v1/batches", { sessionId: sid, options: { width: 350, height: 350, mode: "cover", format: "jpg" } });
     const id = b.json().batchId;
     await sseUntilDone(`/api/v1/batches/${id}/events`);
@@ -236,48 +231,8 @@ describe("resize nhanh qua API", () => {
   });
 });
 
-describe("chế độ dự án qua API", () => {
-  it("manifest, crop, names (chặn trùng), review → commit; đổi dự án giữa chừng → E_STALE_CONFIRMATION", async () => {
-    const m = (await req("GET", "/api/v1/project/manifest", { headers: authed() })).json();
-    expect(m.report.files.map((f: { destination: string }) => f.destination).sort()).toEqual(["out/a.webp", "out/b.webp", "out/ids/x1.webp", "out/ids/x2.webp"]);
-    expect(await listFiles(path.join(dir, "out"))).toEqual([]); // manifest = dry-run
-
-    const img = await req("GET", `/api/v1/project/image?source=${encodeURIComponent("photos/a.jpg")}&max=64`, { headers: authed() });
-    expect(img.status).toBe(200);
-
-    expect((await put("/api/v1/project/crops", { source: "photos/a.jpg", focal: { x: 0.2, y: 0.5 } })).status).toBe(200);
-    const crops = JSON.parse(await readFile(path.join(dir, "imgfit.crops.json"), "utf8"));
-    expect(crops.crops["photos/a.jpg"]).toEqual({ x: 0.2, y: 0.5 });
-    expect((await put("/api/v1/project/crops", { source: "../secret.jpg", focal: { x: 0.2, y: 0.5 } })).status).toBe(403);
-
-    const dup = await put("/api/v1/project/names", { rule: "named", names: { "photos/a.jpg": "same", "photos/b.jpg": "SAME" } });
-    expect(dup.status).toBe(400);
-    expect(dup.json().errors[0].details.problems.join(" ")).toContain("trùng");
-    expect((await put("/api/v1/project/names", { rule: "named", names: { "photos/a.jpg": "hero-a", "photos/b.jpg": "hero-b" } })).status).toBe(200);
-    expect((await req("GET", "/api/v1/project/names?rule=named", { headers: authed() })).json().names).toEqual({ "photos/a.jpg": "hero-a", "photos/b.jpg": "hero-b" });
-
-    const p1 = (await post("/api/v1/write/preview", { overwrite: false })).json();
-    expect(p1.report.files.filter((f: { action: string }) => f.action === "create")).toHaveLength(4);
-    // the project changes after review → commit refused
-    await solid(path.join(dir, "src-img", "photos", "b.jpg"), 300, 400, "#0000ff");
-    const stale = await post("/api/v1/write/commit", { nonce: p1.nonce });
-    expect(stale.status).toBe(409);
-    expect(stale.json().errors[0].code).toBe("E_STALE_CONFIRMATION");
-    expect(await listFiles(path.join(dir, "out"))).toEqual([]);
-
-    const p2 = (await post("/api/v1/write/preview", { overwrite: false })).json();
-    const c = await post("/api/v1/write/commit", { nonce: p2.nonce });
-    expect(c.status).toBe(202);
-    const events = await sseUntilDone(`/api/v1/batches/${c.json().batchId}/events`);
-    expect(events.at(-1)?.data.status).toBe("ok");
-    expect(await listFiles(path.join(dir, "out"))).toEqual(["a.webp", "b.webp", "ids/hero-a.webp", "ids/hero-b.webp"]);
-    // nonces are single-use
-    expect((await post("/api/v1/write/commit", { nonce: p2.nonce })).status).toBe(409);
-  });
-});
-
-describe("dọn dẹp", () => {
-  it("close() xóa thư mục tạm của phiên", async () => {
+describe("dá»n dáº¹p", () => {
+  it("close() xÃ³a thÆ° má»¥c táº¡m cá»§a phiÃªn", async () => {
     const d = await tempDir();
     try {
       const s = await startUiServer({ root: d.dir, port: 0 });

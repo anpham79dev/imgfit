@@ -119,7 +119,6 @@ export function httpStatusFor(code: string): number {
     case "E_NOT_FOUND":
     case "E_INPUT_NOT_FOUND":
       return 404;
-    case "E_STALE_CONFIRMATION":
     case "E_LOCKED":
     case "E_OUTPUT_CONFLICT":
       return 409;

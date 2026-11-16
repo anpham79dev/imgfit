@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { assertId, newId } from "./sessions.js";
 
-/** Encoded previews (quick + project mode). Files live in a private temp directory; ids are random. */
+/** Encoded previews (quick mode). Files live in a private temp directory; ids are random. */
 export class PreviewStore {
   private readonly files = new Map<string, string>();
 
