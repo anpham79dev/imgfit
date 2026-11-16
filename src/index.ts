@@ -32,6 +32,10 @@ export { parseColor, DEFAULT_QUALITY } from "./image/options.js";
 export type { TransformOptions } from "./image/options.js";
 export type { Mode, SmallInputPolicy, CropPosition, Point, Size } from "./image/geometry.js";
 export type { OutputFormat, FormatOption, KeepFormat } from "./image/formats.js";
+export { planWatermark, parseLength, WATERMARK_POSITIONS } from "./image/watermark.js";
+export type { WatermarkConfig, WatermarkSpec, WatermarkPlacement, WatermarkPosition } from "./image/watermark.js";
+export { resolveVariants } from "./config/variants.js";
+export type { Variant, TransformOverrides } from "./config/variants.js";
 export type { OnConflict } from "./io/publish.js";
 export type { ProgressEvent, ProgressEventType } from "./pipeline/batch.js";
 

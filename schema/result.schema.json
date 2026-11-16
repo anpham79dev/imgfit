@@ -87,6 +87,7 @@
         "inputPx",
         "outputPx",
         "elapsedMs",
+        "watermark",
         "fingerprint",
         "warnings",
         "errors"
@@ -157,6 +158,56 @@
         },
         "elapsedMs": {
           "type": "number"
+        },
+        "watermark": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "name",
+                "left",
+                "top",
+                "width",
+                "height"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "left": {
+                  "type": "integer"
+                },
+                "top": {
+                  "type": "integer"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "name",
+                "skipped"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "skipped": {
+                  "type": "string"
+                }
+              }
+            }
+          ],
+          "description": "Vị trí/kích thước logo trên output (px), hoặc lý do bỏ qua; null nếu không có watermark."
         },
         "fingerprint": {
           "type": [

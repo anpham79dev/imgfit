@@ -1,6 +1,7 @@
 import { ImgfitError } from "../core/errors.js";
 import { type FormatOption, type OutputFormat, validateFormatOption } from "./formats.js";
 import { type CropPosition, type Mode, type Point, SMALL_INPUT_POLICIES, type SmallInputPolicy } from "./geometry.js";
+import type { WatermarkSpec } from "./watermark.js";
 
 /** Default input pixel limit (≈ 268 MP, same as sharp's default). Guards against decompression bombs. */
 export const DEFAULT_LIMIT_INPUT_PIXELS = 268_402_689;
@@ -39,6 +40,8 @@ export interface TransformOptions {
   /** progressive: default true (renders gradually on slow connections, usually a little smaller). */
   jpeg?: { progressive?: boolean };
   limitInputPixels?: number;
+  /** Logo composited after resizing (see image/watermark.ts). null = explicitly none (overrides a preset). */
+  watermark?: WatermarkSpec | null;
 }
 
 export interface Rgba {
@@ -113,5 +116,6 @@ export function effectiveOptions(t: TransformOptions, outputFormat: OutputFormat
     png: t.png,
     progressive: outputFormat === "jpg" ? (t.jpeg?.progressive ?? true) : undefined,
     keepSmallerSource: t.keepSmallerSource ?? true,
+    watermark: t.watermark ? { ...t.watermark } : undefined,
   };
 }

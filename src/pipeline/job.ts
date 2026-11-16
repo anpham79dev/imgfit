@@ -58,6 +58,7 @@ export async function prepareJob(job: Job): Promise<void> {
       r.format = null;
     } else {
       r.outputPx = [plan.outputSize.width, plan.outputSize.height];
+      r.watermark = plan.watermark;
     }
   } catch (err) {
     fail(r, err);

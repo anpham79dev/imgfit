@@ -3,7 +3,7 @@ import { DEFAULT_JOBS, DEFAULT_NAME_TEMPLATE, MAX_JOBS, resize, type ResizeOptio
 import { ImgfitError } from "../../core/errors.js";
 import type { FormatOption, OutputFormat } from "../../image/formats.js";
 import type { CropPosition, Mode, SmallInputPolicy } from "../../image/geometry.js";
-import type { TransformOptions } from "../../image/options.js";
+import type { TransformOverrides } from "../../config/variants.js";
 import type { CliContext, Opts } from "../context.js";
 import { conflictFrom, withOutputOptions } from "../options.js";
 import { intArg, parseFocal, parseFormat, parseFormatList, parseNameList, parseSigma, parseSize } from "../parsers.js";
@@ -15,11 +15,11 @@ function keepFallback(format: FormatOption): OutputFormat {
 }
 
 /** Transform options given on the command line. With --preset only the ones typed explicitly count as overrides. */
-function transformFrom(o: Opts, explicit: (name: string) => boolean): Partial<TransformOptions> {
+function transformFrom(o: Opts, explicit: (name: string) => boolean): TransformOverrides {
   const size = o.size as { width: number; height: number } | undefined;
   const focal = o.focal as { x: number; y: number } | undefined;
   const position = (o.position as CropPosition | undefined) ?? (focal ? "focal" : undefined);
-  const t: Partial<TransformOptions> = {
+  const t: TransformOverrides = {
     ...(size ? { width: size.width, height: size.height } : {}),
     ...(explicit("mode") ? { mode: o.mode as Mode } : {}),
     ...(explicit("format") || o.keep ? { format: o.keep ? { keep: o.keep as OutputFormat[], fallback: keepFallback(o.format as FormatOption) } : (o.format as FormatOption) } : {}),
@@ -35,6 +35,8 @@ function transformFrom(o: Opts, explicit: (name: string) => boolean): Partial<Tr
     ...(o.maxPixels ? { limitInputPixels: o.maxPixels as number } : {}),
     ...(explicit("progressive") ? { jpeg: { progressive: o.progressive as boolean } } : {}),
     ...(explicit("keepSmallerSource") ? { keepSmallerSource: o.keepSmallerSource as boolean } : {}),
+    // --watermark <name> / --no-watermark (false → none, overrides the preset)
+    ...(explicit("watermark") ? { watermark: o.watermark === false ? null : (o.watermark as string) } : {}),
     ...(explicit("pngPalette") || o.pngCompression !== undefined
       ? { png: { palette: o.pngPalette as boolean, ...(o.pngCompression !== undefined ? { compressionLevel: o.pngCompression as number } : {}) } }
       : {}),
@@ -87,6 +89,8 @@ export function registerResize(program: Command, ctx: CliContext): void {
     .option("--sharpen [sigma]", "sharpen sau khi giảm cỡ (sigma 0.3–10, mặc định 1)", parseSigma)
     .option("--keep-metadata", "giữ EXIF/XMP/ICC (mặc định bỏ, chuyển sRGB)", false)
     .option("--no-progressive", "JPEG baseline thay vì progressive (mặc định progressive)")
+    .option("--watermark <name>", "gắn watermark khai báo trong imgfit.json (ghi đè preset)")
+    .option("--no-watermark", "không gắn watermark kể cả khi preset có")
     .option("--no-keep-smaller-source", "luôn ghi bản encode, kể cả khi nặng hơn ảnh gốc cùng định dạng/kích thước")
     .option("--png-palette", "PNG palette (nhỏ hơn, có thể giảm chất lượng)", false)
     .option("--png-compression <0-9>", "mức nén PNG (mặc định 6)", intArg("png-compression", 0, 9))

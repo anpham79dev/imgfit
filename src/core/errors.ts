@@ -44,6 +44,7 @@ export const WARNING_CODES = [
   "W_SAME_CONTENT_EXISTS",
   "W_METADATA_KEPT",
   "W_OUTPUT_LARGER",
+  "W_WATERMARK_SKIPPED",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

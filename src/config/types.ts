@@ -1,6 +1,7 @@
 import type { FormatOption } from "../image/formats.js";
 import type { CropPosition, Mode, SmallInputPolicy } from "../image/geometry.js";
 import type { TransformOptions } from "../image/options.js";
+import type { WatermarkConfig, WatermarkSpec } from "../image/watermark.js";
 
 export const CONFIG_FILENAME = "imgfit.json";
 export const CONFIG_SCHEMA_VERSION = 2;
@@ -21,6 +22,8 @@ export interface PresetConfig {
   sharpen?: number;
   stripMetadata?: boolean;
   keepSmallerSource?: boolean;
+  /** Name of an entry in `watermarks`. */
+  watermark?: string;
   jpeg?: { progressive?: boolean };
   png?: { compressionLevel?: number; palette?: boolean };
 }
@@ -29,6 +32,7 @@ export interface ConfigFile {
   $schema?: string;
   schemaVersion: typeof CONFIG_SCHEMA_VERSION;
   presets: Record<string, PresetConfig>;
+  watermarks?: Record<string, WatermarkConfig>;
 }
 
 // ── resolved, ready to use ──
@@ -45,4 +49,5 @@ export interface PresetConfigSet {
   /** directory containing imgfit.json; relative paths inside it resolve from here */
   dir: string;
   presets: Map<string, ResolvedPreset>;
+  watermarks: Map<string, WatermarkSpec>;
 }

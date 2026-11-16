@@ -1,4 +1,5 @@
 import type { OutputFormat } from "../image/formats.js";
+import type { WatermarkPlacement } from "../image/watermark.js";
 import { TOOL_NAME, versions } from "../version.js";
 import type { Issue } from "./errors.js";
 
@@ -31,6 +32,8 @@ export interface FileResult {
   inputPx: [number, number] | null;
   outputPx: [number, number] | null;
   elapsedMs: number;
+  /** Logo placement on the output, or why it was skipped; null without watermark. */
+  watermark: WatermarkPlacement | null;
   fingerprint: string | null;
   warnings: Issue[];
   errors: Issue[];
@@ -81,6 +84,7 @@ export function newFileResult(file: string, init: Partial<FileResult> = {}): Fil
     inputPx: null,
     outputPx: null,
     elapsedMs: 0,
+    watermark: null,
     fingerprint: null,
     warnings: [],
     errors: [],

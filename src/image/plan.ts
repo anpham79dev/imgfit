@@ -2,6 +2,7 @@ import { ImgfitError, type Issue, warning } from "../core/errors.js";
 import { type OutputFormat, resolveOutputFormat, supportsAlpha } from "./formats.js";
 import { aspectCropRect, type CropPosition, fitInside, focalForPosition, isSmallInput, type Rect, type Size, type SmallInputPolicy } from "./geometry.js";
 import { parseColor, type Rgba, type TransformOptions } from "./options.js";
+import { planWatermark, type WatermarkPlacement } from "./watermark.js";
 import type { ProbeResult } from "./probe.js";
 
 /** The concrete operation the encoder performs. */
@@ -23,6 +24,8 @@ export interface TransformPlan {
   op: PlanOp;
   flatten: boolean;
   background: Rgba;
+  /** null when the transform has no watermark */
+  watermark: WatermarkPlacement | null;
   warnings: Issue[];
 }
 
@@ -44,7 +47,7 @@ export function planTransform(src: ProbeResult, opts: TransformOptions): Transfo
       source: [source.width, source.height],
       target: [target.width, target.height],
     });
-    return { skip: true, outputFormat, outputSize: source, op: { kind: "inside", size: source }, flatten: false, background: { r: 0, g: 0, b: 0, alpha: 0 }, warnings: [reason] };
+    return { skip: true, outputFormat, outputSize: source, op: { kind: "inside", size: source }, flatten: false, background: { r: 0, g: 0, b: 0, alpha: 0 }, watermark: null, warnings: [reason] };
   }
 
   const { op, outputSize } = small ? planSmallInput(source, target, opts, policy, position, warnings) : planNormal(source, target, opts, allowUp, position);
@@ -54,7 +57,9 @@ export function planTransform(src: ProbeResult, opts: TransformOptions): Transfo
   if (flatten) warnings.push(warning("W_ALPHA_FLATTENED", "Ảnh có alpha, đã flatten lên nền khi xuất JPG (mất trong suốt)"));
   if (opts.stripMetadata === false) warnings.push(warning("W_METADATA_KEPT", "Giữ metadata (EXIF/XMP/ICC) — có thể chứa thông tin cá nhân như GPS"));
 
-  return { skip: false, outputFormat, outputSize, op, flatten, background, warnings };
+  const watermark = opts.watermark ? planWatermark(outputSize, opts.watermark) : null;
+  if (watermark && "skipped" in watermark) warnings.push(warning("W_WATERMARK_SKIPPED", `Không gắn watermark "${watermark.name}": ${watermark.skipped}`));
+  return { skip: false, outputFormat, outputSize, op, flatten, background, watermark, warnings };
 }
 
 interface Planned {

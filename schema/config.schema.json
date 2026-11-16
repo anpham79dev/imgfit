@@ -2,75 +2,286 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://imgfit.local/schema/config.schema.json",
   "title": "imgfit config (imgfit.json)",
-  "description": "Preset dùng chung cho resize --preset, exec và UI.",
+  "description": "Preset và watermark dùng chung cho resize --preset, exec, UI và service.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "presets"],
+  "required": [
+    "schemaVersion",
+    "presets"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "schemaVersion": { "const": 2 },
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
     "presets": {
       "type": "object",
       "minProperties": 1,
-      "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$" },
-      "additionalProperties": { "$ref": "#/$defs/preset" }
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/preset"
+      }
+    },
+    "watermarks": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/watermark"
+      }
     }
   },
   "$defs": {
-    "quality": { "type": "integer", "minimum": 1, "maximum": 100 },
-    "color": { "type": "string", "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$" },
+    "quality": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+    },
     "preset": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["size"],
+      "required": [
+        "size"
+      ],
       "properties": {
         "size": {
           "type": "array",
           "prefixItems": [
-            { "type": "integer", "minimum": 1, "maximum": 65535 },
-            { "type": "integer", "minimum": 1, "maximum": 65535 }
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
           ],
           "minItems": 2,
           "maxItems": 2,
           "description": "[width, height]"
         },
-        "prefix": { "type": "string", "pattern": "^[^/\\\\{}]*$", "maxLength": 64, "description": "Tiền tố tên file, dùng qua {prefix} (template mặc định \"{prefix}{name}.{ext}\")." },
-        "mode": { "enum": ["fit", "cover", "pad"], "default": "fit" },
+        "prefix": {
+          "type": "string",
+          "pattern": "^[^/\\\\{}]*$",
+          "maxLength": 64,
+          "description": "Tiền tố tên file, dùng qua {prefix} (template mặc định \"{prefix}{name}.{ext}\")."
+        },
+        "mode": {
+          "enum": [
+            "fit",
+            "cover",
+            "pad"
+          ],
+          "default": "fit"
+        },
         "format": {
           "description": "keep: giữ định dạng input (lỗi nếu không giữ được) · jpg/png/webp/avif · {keep, fallback}: giữ nếu nằm trong keep, ngược lại dùng fallback",
           "oneOf": [
-            { "enum": ["keep", "jpg", "png", "webp", "avif"] },
+            {
+              "enum": [
+                "keep",
+                "jpg",
+                "png",
+                "webp",
+                "avif"
+              ]
+            },
             {
               "type": "object",
               "additionalProperties": false,
-              "required": ["keep", "fallback"],
+              "required": [
+                "keep",
+                "fallback"
+              ],
               "properties": {
-                "keep": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["jpg", "png", "webp", "avif"] } },
-                "fallback": { "enum": ["jpg", "png", "webp", "avif"] }
+                "keep": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "jpg",
+                      "png",
+                      "webp",
+                      "avif"
+                    ]
+                  }
+                },
+                "fallback": {
+                  "enum": [
+                    "jpg",
+                    "png",
+                    "webp",
+                    "avif"
+                  ]
+                }
               }
             }
           ]
         },
-        "quality": { "$ref": "#/$defs/quality" },
-        "upscale": { "type": "boolean" },
-        "smallInput": { "enum": ["error", "keep", "pad", "skip"], "description": "Ảnh nhỏ hơn khung: error (báo lỗi) · keep (giữ cỡ nhỏ) · pad (đệm nền) · skip (không tạo output, status skipped)" },
-        "position": { "enum": ["center", "top", "attention"] },
-        "background": { "$ref": "#/$defs/color" },
-        "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },
-        "stripMetadata": { "type": "boolean" },
-        "keepSmallerSource": { "type": "boolean", "default": true, "description": "Output cùng định dạng, cùng kích thước mà nặng hơn ảnh gốc → dùng ảnh gốc (khi không có metadata cần xóa, orientation 1, không watermark). Luôn kèm W_OUTPUT_LARGER." },
+        "quality": {
+          "$ref": "#/$defs/quality"
+        },
+        "upscale": {
+          "type": "boolean"
+        },
+        "smallInput": {
+          "enum": [
+            "error",
+            "keep",
+            "pad",
+            "skip"
+          ],
+          "description": "Ảnh nhỏ hơn khung: error (báo lỗi) · keep (giữ cỡ nhỏ) · pad (đệm nền) · skip (không tạo output, status skipped)"
+        },
+        "position": {
+          "enum": [
+            "center",
+            "top",
+            "attention"
+          ]
+        },
+        "background": {
+          "$ref": "#/$defs/color"
+        },
+        "sharpen": {
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 10
+        },
+        "stripMetadata": {
+          "type": "boolean"
+        },
+        "keepSmallerSource": {
+          "type": "boolean",
+          "default": true,
+          "description": "Output cùng định dạng, cùng kích thước mà nặng hơn ảnh gốc → dùng ảnh gốc (khi không có metadata cần xóa, orientation 1, không watermark). Luôn kèm W_OUTPUT_LARGER."
+        },
         "jpeg": {
           "type": "object",
           "additionalProperties": false,
-          "properties": { "progressive": { "type": "boolean", "default": true } }
+          "properties": {
+            "progressive": {
+              "type": "boolean",
+              "default": true
+            }
+          }
         },
         "png": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "compressionLevel": { "type": "integer", "minimum": 0, "maximum": 9 },
-            "palette": { "type": "boolean" }
+            "compressionLevel": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "palette": {
+              "type": "boolean"
+            }
           }
+        },
+        "watermark": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tên một mục trong watermarks."
+        }
+      }
+    },
+    "length": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(%|px)?\\s*$"
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ],
+      "description": "\"15%\" (theo cạnh output) hoặc \"24px\" / 24"
+    },
+    "watermark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Logo (PNG có alpha), tương đối theo imgfit.json."
+        },
+        "position": {
+          "enum": [
+            "top-left",
+            "top",
+            "top-right",
+            "left",
+            "center",
+            "right",
+            "bottom-left",
+            "bottom",
+            "bottom-right"
+          ],
+          "default": "bottom-right"
+        },
+        "offset": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/length"
+            },
+            {
+              "$ref": "#/$defs/length"
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [
+            "2%",
+            "2%"
+          ],
+          "description": "[x, y] tính từ cạnh neo: % chiều rộng/chiều cao output hoặc px."
+        },
+        "width": {
+          "$ref": "#/$defs/length",
+          "default": "15%",
+          "description": "Chiều rộng logo (% chiều rộng output hoặc px). Chiều cao theo tỉ lệ logo, không méo, không crop."
+        },
+        "minOutput": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Bỏ qua watermark khi output nhỏ hơn [w, h] ở một trong hai chiều."
+        },
+        "opacity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "default": 1
         }
       }
     }

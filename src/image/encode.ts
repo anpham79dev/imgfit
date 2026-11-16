@@ -1,4 +1,4 @@
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import type { Metadata, Sharp } from "sharp";
 import { ImgfitError, normalizeError } from "../core/errors.js";
 import { type OutputFormat, sharpNameFor } from "./formats.js";
@@ -6,6 +6,7 @@ import { centerOffsets, type CropPosition } from "./geometry.js";
 import { DEFAULT_LIMIT_INPUT_PIXELS, DEFAULT_QUALITY, type TransformOptions } from "./options.js";
 import type { TransformPlan } from "./plan.js";
 import type { ProbeResult } from "./probe.js";
+import { isPlaced, type WatermarkSpec } from "./watermark.js";
 import { sharp } from "./sharp.js";
 
 export interface EncodeResult {
@@ -48,6 +49,27 @@ function applyGeometry(img: Sharp, src: ProbeResult, plan: TransformPlan, opts: 
   }
 }
 
+/** Logo bytes, read once per file (from a buffer, so libvips never holds the file open). */
+const logoCache = new Map<string, Promise<Buffer>>();
+function logoBytes(file: string): Promise<Buffer> {
+  let p = logoCache.get(file);
+  if (!p) {
+    p = readFile(file).catch((err: unknown) => {
+      logoCache.delete(file);
+      throw new ImgfitError("E_CONFIG_INVALID", `Không đọc được logo watermark ${file}: ${(err as Error).message}`, { path: file });
+    });
+    logoCache.set(file, p);
+  }
+  return p;
+}
+
+/** The logo at its planned size (uniform scale), sRGB with alpha, opacity applied. */
+async function renderLogo(spec: WatermarkSpec, width: number, height: number): Promise<Buffer> {
+  let logo = sharp(await logoBytes(spec.file)).resize(width, height, { fit: "fill" }).toColourspace("srgb").ensureAlpha();
+  if (spec.opacity < 1) logo = logo.linear([1, 1, 1, spec.opacity], [0, 0, 0, 0]);
+  return logo.png().toBuffer();
+}
+
 function applyEncoder(img: Sharp, format: OutputFormat, opts: TransformOptions): Sharp {
   switch (format) {
     case "jpg":
@@ -69,6 +91,10 @@ export async function transformToFile(input: string, outFile: string, src: Probe
   img = applyGeometry(img, src, plan, opts);
   if (opts.sharpen !== undefined) img = img.sharpen({ sigma: opts.sharpen });
   if (plan.flatten) img = img.flatten({ background: plan.background });
+  if (isPlaced(plan.watermark) && opts.watermark) {
+    const w = plan.watermark;
+    img = img.composite([{ input: await renderLogo(opts.watermark, w.width, w.height), left: w.left, top: w.top }]);
+  }
   img = opts.stripMetadata === false ? img.keepMetadata() : img.toColourspace("srgb");
   img = applyEncoder(img, plan.outputFormat, opts);
 

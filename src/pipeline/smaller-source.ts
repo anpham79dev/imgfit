@@ -5,6 +5,7 @@ import { copyFile } from "node:fs/promises";
 import { warning } from "../core/errors.js";
 import type { TransformPlan } from "../image/plan.js";
 import type { ProbeResult } from "../image/probe.js";
+import { isPlaced } from "../image/watermark.js";
 import type { Job } from "./job.js";
 
 /** Why the source bytes cannot replace a larger output, or null when they can. */
@@ -12,6 +13,7 @@ function sourceSwapBlocker(job: Job): string | null {
   const p = job.probe as ProbeResult;
   const t = job.transform;
   if (t.keepSmallerSource === false) return "keepSmallerSource=false";
+  if (isPlaced((job.plan as TransformPlan).watermark)) return "output có watermark";
   if (p.orientation !== 1) return "ảnh gốc có EXIF orientation, phải xoay";
   if (t.stripMetadata !== false && (p.hasMetadata || p.hasProfile)) return "ảnh gốc có metadata/ICC cần xóa";
   if (p.space !== "srgb" && p.space !== "b-w") return `ảnh gốc ở không gian màu ${p.space}, phải chuyển sRGB`;

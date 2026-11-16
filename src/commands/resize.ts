@@ -7,8 +7,7 @@ import { newFileResult, type Report } from "../core/report.js";
 import { renderTemplate, validateTemplate } from "../core/template.js";
 import { findConfig } from "../config/find.js";
 import { loadConfig } from "../config/load.js";
-import { resolveVariants, type Variant } from "../config/variants.js";
-import type { TransformOptions } from "../image/options.js";
+import { needsConfig, resolveVariants, type TransformOverrides, type Variant } from "../config/variants.js";
 import { collectInputs } from "../io/inputs.js";
 import type { OnConflict } from "../io/publish.js";
 import { executeJobs, type ProgressEvent } from "../pipeline/batch.js";
@@ -22,7 +21,7 @@ export const DEFAULT_NAME_TEMPLATE = "{prefix}{name}.{ext}";
  * Either presets (from imgfit.json; any transform field given here overrides them) or an explicit
  * transform (width + height required).
  */
-export interface ResizeOptions extends Partial<TransformOptions> {
+export interface ResizeOptions extends TransformOverrides {
   /** Files, directories or globs. Relative paths resolve against `cwd`. */
   inputs: string[];
   /** Output directory. */
@@ -33,7 +32,7 @@ export interface ResizeOptions extends Partial<TransformOptions> {
   name?: string;
   /** Preset names from imgfit.json; each input produces one output per preset. */
   presets?: string[];
-  /** imgfit.json path (default: IMGFIT_CONFIG, then search upward from cwd). Only read when presets are used. */
+  /** imgfit.json path (default: IMGFIT_CONFIG, then search upward from cwd). Only read for presets / named watermarks. */
   config?: string;
   /** Images processed in parallel, default 4. */
   jobs?: number;
@@ -84,7 +83,7 @@ export async function resize(opts: ResizeOptions): Promise<Report> {
   const outputRoot = path.resolve(cwd, opts.output);
   const template = opts.name ?? DEFAULT_NAME_TEMPLATE;
   const concurrency = opts.jobs ?? DEFAULT_JOBS;
-  const cfg = opts.presets?.length ? await loadConfig(await findConfig(cwd, opts.config)) : undefined;
+  const cfg = needsConfig(opts.presets, opts) ? await loadConfig(await findConfig(cwd, opts.config)) : undefined;
   const variants = resolveVariants(opts.presets, opts, cfg);
   await assertOutputDir(outputRoot, opts.output);
 

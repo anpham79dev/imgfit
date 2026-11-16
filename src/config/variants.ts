@@ -4,6 +4,7 @@
  */
 import { ImgfitError } from "../core/errors.js";
 import { type TransformOptions, validateTransformOptions } from "../image/options.js";
+import type { WatermarkSpec } from "../image/watermark.js";
 import type { PresetConfigSet } from "./types.js";
 
 /** One output per input: which preset (if any), its file-name prefix and the final transform. */
@@ -31,6 +32,7 @@ export const TRANSFORM_KEYS = [
   "jpeg",
   "keepSmallerSource",
   "limitInputPixels",
+  "watermark",
 ] as const satisfies ReadonlyArray<keyof TransformOptions>;
 
 /** The TransformOptions fields that are set (not undefined) in `o`. */
@@ -51,8 +53,22 @@ function finish(t: TransformOptions, overrides: Partial<TransformOptions>): Tran
  * - presets given: each preset overlaid with the overrides (only fields that are set)
  * - no presets: the overrides alone; width/height required, mode defaults to fit, format to keep
  */
-export function resolveVariants(presetNames: string[] | undefined, overrides: Partial<TransformOptions>, cfg: PresetConfigSet | undefined): Variant[] {
-  const o = pickTransform(overrides);
+/** Overrides as callers give them: a watermark may be named (looked up in imgfit.json) or null (none). */
+export type TransformOverrides = Omit<Partial<TransformOptions>, "watermark"> & { watermark?: WatermarkSpec | string | null };
+
+/** True when resolving these overrides needs imgfit.json. */
+export const needsConfig = (presetNames: string[] | undefined, overrides: TransformOverrides): boolean => !!presetNames?.length || typeof overrides.watermark === "string";
+
+export function resolveVariants(presetNames: string[] | undefined, overrides: TransformOverrides, cfg: PresetConfigSet | undefined): Variant[] {
+  const { watermark: wm, ...rest } = overrides;
+  const o = pickTransform(rest);
+  if (typeof wm === "string") {
+    const spec = cfg?.watermarks.get(wm);
+    if (!spec) throw new ImgfitError("E_USAGE", `Watermark "${wm}" không có trong ${cfg?.file ?? "imgfit.json"}`, { available: [...(cfg?.watermarks.keys() ?? [])] });
+    o.watermark = spec;
+  } else if (wm !== undefined) {
+    o.watermark = wm;
+  }
   if (!presetNames || presetNames.length === 0) {
     if (o.width === undefined || o.height === undefined) throw new ImgfitError("E_USAGE", "Cần kích thước (--size / size) hoặc preset (--preset / preset)");
     return [{ preset: null, prefix: "", transform: finish({ mode: "fit", format: "keep", ...o } as TransformOptions, o) }];

@@ -6,14 +6,13 @@ import { newFileResult, type Report } from "../core/report.js";
 import { renderTemplate } from "../core/template.js";
 import type { FormatOption } from "../image/formats.js";
 import type { CropPosition, Mode, Point, SmallInputPolicy } from "../image/geometry.js";
-import type { TransformOptions } from "../image/options.js";
 import type { OnConflict } from "../io/publish.js";
 import { executeJobs, type ProgressEvent } from "../pipeline/batch.js";
 import { assertExtension, displayPath, fail, type Job, prepareJob } from "../pipeline/job.js";
 import { findConfig } from "../config/find.js";
 import { loadConfig } from "../config/load.js";
 import type { PresetConfigSet } from "../config/types.js";
-import { resolveVariants, type Variant } from "../config/variants.js";
+import { resolveVariants, type TransformOverrides, type Variant } from "../config/variants.js";
 import { validateWith } from "../config/validate.js";
 
 /** One job of an exec spec (mirrors schema/job.schema.json). */
@@ -35,6 +34,8 @@ export interface ExecItem {
   png?: { compressionLevel?: number; palette?: boolean };
   jpeg?: { progressive?: boolean };
   keepSmallerSource?: boolean;
+  /** Watermark name from imgfit.json, or null for none (overrides the preset). */
+  watermark?: string | null;
 }
 
 export interface ExecSpec {
@@ -67,7 +68,7 @@ export async function parseExecSpec(text: string): Promise<ExecSpec> {
 /** Preset (if any) overlaid with the item's inline options. Throws on invalid combinations. */
 function variantFor(item: ExecItem, cfg: PresetConfigSet | undefined): Variant {
   const { input: _i, output: _o, preset, size, ...inline } = item;
-  const overrides: Partial<TransformOptions> = { ...inline, ...(size ? { width: size[0], height: size[1] } : {}) };
+  const overrides: TransformOverrides = { ...inline, ...(size ? { width: size[0], height: size[1] } : {}) };
   return resolveVariants(preset ? [preset] : undefined, overrides, cfg)[0] as Variant;
 }
 
@@ -79,7 +80,7 @@ export async function exec(spec: ExecSpec, opts: ExecOptions = {}): Promise<Repo
   const startedAt = new Date();
   const cwd = path.resolve(opts.cwd ?? process.cwd());
   const root = path.resolve(cwd, spec.root ?? ".");
-  const cfg = spec.jobs.some((j) => j.preset) ? await loadConfig(await findConfig(cwd, spec.config)) : undefined;
+  const cfg = spec.jobs.some((j) => j.preset || typeof j.watermark === "string") ? await loadConfig(await findConfig(cwd, spec.config)) : undefined;
 
   const jobs: Job[] = spec.jobs.map((item) => {
     const source = path.resolve(cwd, item.input);
