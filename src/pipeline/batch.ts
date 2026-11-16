@@ -11,6 +11,7 @@ import { ImgfitError, warning } from "../core/errors.js";
 import { assertSafeDestination } from "../core/paths.js";
 import { type FileResult, makeReport, type Report } from "../core/report.js";
 import type { OnConflict } from "../io/publish.js";
+import { resolveDisplayName, isContentNamed } from "./content-name.js";
 import { detectCollisions, fail, type Job, jobFingerprint, processJob } from "./job.js";
 
 export type ProgressEventType = "queued" | "processing" | "done" | "skipped" | "failed" | "cancelled";
@@ -76,6 +77,10 @@ export interface ExecuteOptions {
 /** Resolves existing-destination handling before spending CPU on encoding. */
 async function preflightDestination(j: Job, o: ExecuteOptions): Promise<void> {
   await assertSafeDestination(o.outputRoot, j.dest as string);
+  if (isContentNamed(j.dest as string)) {
+    j.result.action = "create"; // the name is only known after encoding
+    return;
+  }
   const exists = await lstat(j.dest as string).then(
     () => true,
     () => false,
@@ -142,7 +147,14 @@ export async function executeJobs(command: string, startedAt: Date, jobs: Job[],
               ...(o.backup ? { backupFile: path.join(o.backupRoot, id, rel) } : {}),
             });
             r.status = res.outcome;
-            if (res.outcome === "skipped") {
+            j.dest = res.destination;
+            if (r.destination) r.destination = resolveDisplayName(r.destination, res.hash.slice("sha256:".length));
+            if (res.sameContent) {
+              r.action = null;
+              r.outputBytes = res.bytes;
+              r.outputPx = [res.width, res.height];
+              r.warnings.push(warning("W_SAME_CONTENT_EXISTS", "Đích theo hash nội dung đã tồn tại (cùng nội dung); không ghi lại"));
+            } else if (res.outcome === "skipped") {
               r.warnings.push(warning("W_SKIP_EXISTING_UNVERIFIED", "Đích vừa được tạo bởi tiến trình khác; đã bỏ qua"));
             } else {
               r.action = res.outcome === "created" ? "create" : "replace";

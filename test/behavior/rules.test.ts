@@ -1,7 +1,8 @@
 /**
  * One test per rule of docs/behavior.md, on generated sample images (scripts/samples.mjs).
  */
-import { copyFile, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { copyFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -199,6 +200,43 @@ describe("hành vi: dung lượng", () => {
   it("output nhỏ hơn ảnh gốc: không cảnh báo", async () => {
     const { f } = await one("landscape-3000x2000.jpg", { width: 640, height: 480 });
     expect(f.warnings.map((w) => w.code)).not.toContain("W_OUTPUT_LARGER");
+  });
+});
+
+describe("hành vi: tên theo hash nội dung", () => {
+  const sha16 = async (f: string) => createHash("sha256").update(await readFile(f)).digest("hex").slice(0, 16);
+
+  it("{hash} = 16 hex đầu của SHA-256 output; cùng ảnh → cùng key, lần sau không ghi lại", async () => {
+    await mkdir(path.join(dir, "dup"), { recursive: true });
+    await copyFile(sample("landscape-3000x2000.jpg"), path.join(dir, "dup", "a.jpg"));
+    await copyFile(sample("landscape-3000x2000.jpg"), path.join(dir, "dup", "b.jpg"));
+    await copyFile(sample("small-300x200.jpg"), path.join(dir, "dup", "c.jpg"));
+    const opts = { inputs: ["dup"], output: "hashed", name: "L_{hash}.{ext}", width: 640, height: 480, mode: "fit" as const, format: "jpg" as const, cwd: dir };
+    const r = await resize(opts);
+    expect(r.status).toBe("ok");
+    const [a, b, c] = r.files;
+    expect(a?.destination).toMatch(/^hashed\/L_[0-9a-f]{16}\.jpg$/);
+    expect(a?.destination).toBe(b?.destination);
+    expect(c?.destination).not.toBe(a?.destination);
+    expect(r.summary.created).toBe(2);
+    expect([a, b].map((f) => f?.warnings.some((w) => w.code === "W_SAME_CONTENT_EXISTS"))).toContain(true);
+    for (const f of [a, c]) {
+      const file = path.resolve(dir, f?.destination ?? "");
+      expect(path.basename(file).slice(2, 18)).toBe(await sha16(file));
+    }
+    // second run: same keys, nothing written, no error
+    const again = await resize(opts);
+    expect(again.status).toBe("ok");
+    expect(again.summary).toMatchObject({ created: 0, skipped: 3, failed: 0 });
+    expect(again.files.map((f) => f.destination)).toEqual(r.files.map((f) => f.destination));
+  });
+
+  it("dry-run giữ nguyên {hash}; {hash} trong thư mục bị từ chối; exec dùng được template", async () => {
+    const dry = await resize({ inputs: [sample("small-300x200.jpg")], output: "h2", name: "{hash}.{ext}", width: 100, height: 100, mode: "fit", format: "jpg", dryRun: true, cwd: dir });
+    expect(dry.files[0]?.destination).toBe("h2/{hash}.jpg");
+    await expect(resize({ inputs: [sample("small-300x200.jpg")], output: "h2", name: "{hash}/{name}.{ext}", width: 100, height: 100, mode: "fit", format: "jpg", cwd: dir })).rejects.toMatchObject({ code: "E_USAGE" });
+    const r = await exec({ schemaVersion: 1, jobs: [{ input: path.relative(dir, sample("small-300x200.jpg")), output: "h3/L_{hash}.{ext}", size: [100, 100], format: "webp" }] }, { cwd: dir });
+    expect(r.files[0]?.destination).toMatch(/^h3\/L_[0-9a-f]{16}\.webp$/);
   });
 });
 

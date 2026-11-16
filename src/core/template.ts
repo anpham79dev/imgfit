@@ -2,7 +2,10 @@ import { ImgfitError } from "./errors.js";
 import { sanitizeSegment } from "./paths.js";
 
 /** Placeholders allowed in output name templates. This list is a public contract. */
-export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir"] as const;
+export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir", "hash"] as const;
+
+/** {hash} is left in the rendered path as this token and resolved after encoding (pipeline/content-name.ts). */
+export const HASH_TOKEN = "{hash}";
 export type Placeholder = (typeof PLACEHOLDERS)[number];
 
 export interface TemplateVars {
@@ -14,6 +17,8 @@ export interface TemplateVars {
   preset?: string;
   /** relative sub-directory (posix, may be empty) */
   dir: string;
+  /** content hash; normally absent so the token is kept until the output exists */
+  hash?: string;
 }
 
 const TOKEN = /\{([^{}]*)\}/g;
@@ -35,12 +40,17 @@ export function validateTemplate(template: string): void {
   for (const seg of stripped.split(/[/\\]/)) {
     if (seg === "..") throw new ImgfitError("E_USAGE", `Template không được chứa "..": "${template}"`);
   }
+  const segments = template.split(/[/\\]/);
+  if (segments.slice(0, -1).some((seg) => seg.includes(HASH_TOKEN))) {
+    throw new ImgfitError("E_USAGE", `{hash} chỉ được dùng trong tên file (phần cuối), không trong thư mục: "${template}"`);
+  }
 }
 
 function placeholderValue(key: Placeholder, vars: TemplateVars): string {
   switch (key) {
     case "name":
-      return sanitizeSegment(vars.name).replace(/\//g, "_");
+      // braces are replaced so a source name can never fake the {hash} token
+      return sanitizeSegment(vars.name).replace(/[/{}]/g, "_");
     case "ext":
       return vars.ext;
     case "w":
@@ -52,6 +62,8 @@ function placeholderValue(key: Placeholder, vars: TemplateVars): string {
       return sanitizeSegment(vars.preset);
     case "dir":
       return DIR_MARK; // expanded per segment below
+    case "hash":
+      return vars.hash ?? HASH_TOKEN;
   }
 }
 

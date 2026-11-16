@@ -3,6 +3,7 @@ import pLimit from "p-limit";
 import { ImgfitError } from "../core/errors.js";
 import { isInside } from "../core/paths.js";
 import { newFileResult, type Report } from "../core/report.js";
+import { renderTemplate } from "../core/template.js";
 import type { FormatOption } from "../image/formats.js";
 import type { CropPosition, Mode, Point, SmallInputPolicy } from "../image/geometry.js";
 import { type TransformOptions, validateTransformOptions } from "../image/options.js";
@@ -108,7 +109,12 @@ export async function exec(spec: ExecSpec, opts: ExecOptions = {}): Promise<Repo
         await prepareJob(j);
         if ((j.result.status as string) !== "planned" || !j.plan) return;
         try {
-          const dest = path.resolve(cwd, j.meta?.output as string);
+          const output = j.meta?.output as string;
+          // an output with placeholders ({name} {ext} {hash}…) is a name template, relative to cwd
+          const rel = output.includes("{")
+            ? renderTemplate(output, { name: path.parse(j.source).name, ext: j.plan.outputFormat, w: j.transform.width, h: j.transform.height, dir: "", ...(j.result.preset ? { preset: j.result.preset } : {}) })
+            : output;
+          const dest = path.resolve(cwd, rel);
           j.result.destination = displayPath(cwd, dest);
           if (!isInside(root, dest)) throw new ImgfitError("E_PATH_UNSAFE", `Output nằm ngoài root ${displayPath(cwd, root)}: ${j.result.destination}`);
           assertExtension(dest, j.plan.outputFormat, j.result.destination);

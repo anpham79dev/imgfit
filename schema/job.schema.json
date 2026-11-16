@@ -23,7 +23,7 @@
         "required": ["input", "output"],
         "properties": {
           "input": { "type": "string", "minLength": 1 },
-          "output": { "type": "string", "minLength": 1, "description": "Đường dẫn file output (đuôi phải khớp định dạng)." },
+          "output": { "type": "string", "minLength": 1, "description": "Đường dẫn file output (đuôi phải khớp định dạng). Có placeholder ({name} {ext} {w} {h} {preset} {hash}) thì là template tương đối theo cwd." },
           "preset": { "type": "string", "minLength": 1 },
           "size": {
             "type": "array",
