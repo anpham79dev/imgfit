@@ -53,14 +53,13 @@ try {
   );
   run("node", ["make.mjs"], proj);
 
-  step("CLI: init → run → run (unchanged) → check");
-  run("npx", ["imgfit", "init", "--profile", "web"], proj);
-  const r1 = JSON.parse(run("npx", ["imgfit", "run", "--json"], proj).stdout);
-  const r2 = JSON.parse(run("npx", ["imgfit", "run", "--json"], proj).stdout);
-  if (r1.summary.created < 1 || r2.summary.unchanged !== r1.summary.created) throw new Error(`incremental sai: ${JSON.stringify([r1.summary, r2.summary])}`);
-  const c = JSON.parse(run("npx", ["imgfit", "check", "--json"], proj).stdout);
-  if (c.status !== "ok") throw new Error(`check: ${c.status}`);
-  run("npx", ["imgfit", "run", "--config", "nope.json", "--json"], proj, { allow: [2] });
+  step("CLI: init → exec với preset");
+  run("npx", ["imgfit", "init"], proj);
+  await writeFile(path.join(proj, "job.json"), JSON.stringify({ schemaVersion: 1, jobs: [{ input: "images-src/photos/a.jpg", output: "out/L_a.jpg", preset: "L" }] }));
+  const lines = run("npx", ["imgfit", "exec", "--file", "job.json"], proj).stdout.trim().split("\n").map((l) => JSON.parse(l));
+  const summary = lines.at(-1);
+  if (summary.type !== "summary" || summary.status !== "ok" || summary.summary.created !== 1) throw new Error(`exec: ${JSON.stringify(summary)}`);
+  run("npx", ["imgfit", "exec", "--file", "nope.json"], proj, { allow: [2] });
 
   console.error(`✓ smoke OK (imgfit ${v.imgfit}, sharp ${v.sharp}, ${process.platform}-${process.arch})`);
 } finally {

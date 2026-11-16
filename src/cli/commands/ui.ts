@@ -17,14 +17,14 @@ function openBrowser(url: string): void {
 export function registerUi(program: Command, ctx: CliContext): void {
   program
     .command("ui")
-    .description("Mở web UI chạy cục bộ (chỉ 127.0.0.1): resize nhanh, crop, đặt tên, ghi vào dự án có review")
-    .option("--root <dir>", "gốc dự án (có imgfit.json thì bật chế độ dự án)", ".")
+    .description("Mở web UI chạy cục bộ (chỉ 127.0.0.1): kéo thả ảnh, resize, tải về")
+    .option("--root <dir>", "thư mục có imgfit.json (preset hiện trong UI)", ".")
     .option("--port <n>", "cổng (0 = ngẫu nhiên)", intArg("port", 0, 65_535), 8765)
     .option("--open", "tự mở trình duyệt", false)
     .action(async (o: Opts) => {
       // loaded lazily so the other commands do not pay for express/multer
       const { startUiServer } = await import("../../server/app.js");
-      const server = await startUiServer({ root: ctx.resolve(o.root as string), port: o.port as number, ...(ctx.io.env ? { env: ctx.io.env } : {}) });
+      const server = await startUiServer({ root: ctx.resolve(o.root as string), port: o.port as number });
       ctx.io.stderr.write(`imgfit ui đang chạy (chỉ máy này truy cập được).\nMở: ${server.url}\nURL chứa token dùng một lần — đừng chia sẻ. Ctrl+C để dừng.\n`);
       if (o.open) openBrowser(server.url);
       const signal = ctx.io.signal;

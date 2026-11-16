@@ -2,16 +2,14 @@
  * Public Node API of imgfit — the same core the CLI uses. Other languages use the CLI + JSON (see README).
  *
  * @example
- * import { run, resize } from "imgfit";
- * const report = await run({ cwd: "path/to/project" });
+ * import { resize } from "imgfit";
+ * const report = await resize({ inputs: ["photo.jpg"], output: "out", width: 640, height: 480, mode: "fit", format: "jpg" });
  * if (report.status !== "ok") process.exitCode = 1;
  */
 
 // commands
 export { resize, validateResizeOptions, DEFAULT_JOBS, DEFAULT_NAME_TEMPLATE } from "./commands/resize.js";
 export type { ResizeOptions } from "./commands/resize.js";
-export { run } from "./commands/run.js";
-export type { RunOptions } from "./commands/run.js";
 export { init, sampleConfig } from "./commands/init.js";
 export type { InitOptions, InitResult } from "./commands/init.js";
 export { exec, parseExecSpec } from "./commands/exec.js";
@@ -19,14 +17,10 @@ export type { ExecSpec, ExecItem, ExecOptions } from "./commands/exec.js";
 export { info, capabilities } from "./commands/info.js";
 export type { ImageInfo, Capabilities } from "./commands/info.js";
 
-// project
-export { openProject } from "./project/open.js";
-export type { ProjectOptions } from "./project/open.js";
-export { loadConfig, validateConfigShape } from "./project/config/load.js";
-export { findConfig } from "./project/config/find.js";
-export { PROFILE_FORMATS } from "./project/config/types.js";
-export type { ConfigFile, PresetConfig, RuleConfig, ProjectConfig, Profile } from "./project/config/types.js";
-export { buildManifest } from "./project/manifest.js";
+// config (imgfit.json)
+export { loadConfig, validateConfigShape, resolvePreset } from "./config/load.js";
+export { findConfig } from "./config/find.js";
+export type { ConfigFile, PresetConfig, PresetConfigSet, ResolvedPreset } from "./config/types.js";
 
 // image engine
 export { probe } from "./image/probe.js";

@@ -1,36 +1,41 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { ImgfitError } from "../core/errors.js";
 import { toPosix } from "../core/paths.js";
-import { sampleConfig } from "../project/config/samples.js";
-import { CONFIG_FILENAME, type Profile } from "../project/config/types.js";
-
-export { sampleConfig } from "../project/config/samples.js";
+import { CONFIG_FILENAME, CONFIG_SCHEMA_VERSION, type ConfigFile } from "../config/types.js";
 
 export interface InitOptions {
   cwd?: string;
-  profile?: Profile;
   /** Overwrite an existing imgfit.json / imgfit.schema.json. */
   force?: boolean;
 }
 
-export type InitFileStatus = "created" | "overwritten" | "updated" | "unchanged" | "skipped";
+export type InitFileStatus = "created" | "overwritten" | "unchanged" | "skipped";
 
 export interface InitResult {
   schemaVersion: 1;
   command: "init";
-  profile: Profile;
   files: Array<{ path: string; status: InitFileStatus }>;
 }
 
-export const GITIGNORE_LINES = [".imgfit/", "*.imgfit-*.tmp"];
+/** Sample imgfit.json written by `imgfit init`. Relative paths only, nothing machine-specific. */
+export function sampleConfig(): ConfigFile {
+  return {
+    $schema: "./imgfit.schema.json",
+    schemaVersion: CONFIG_SCHEMA_VERSION,
+    presets: {
+      L: { size: [640, 480], mode: "fit", smallInput: "keep", format: "jpg" },
+      LL: { size: [1600, 1200], mode: "fit", smallInput: "keep", format: "jpg" },
+      O: { size: [2100, 1400], mode: "fit", smallInput: "keep", format: "jpg" },
+    },
+  };
+}
 
 const exists = async (p: string) => (await stat(p).catch(() => undefined)) !== undefined;
 
-async function writeConfig(file: string, profile: Profile, force: boolean): Promise<InitFileStatus> {
+async function writeConfig(file: string, force: boolean): Promise<InitFileStatus> {
   const had = await exists(file);
   if (had && !force) return "skipped";
-  await writeFile(file, `${JSON.stringify(sampleConfig(profile), null, 2)}\n`, "utf8");
+  await writeFile(file, `${JSON.stringify(sampleConfig(), null, 2)}\n`, "utf8");
   return had ? "overwritten" : "created";
 }
 
@@ -44,34 +49,19 @@ async function writeSchema(file: string, force: boolean): Promise<InitFileStatus
   return current === undefined ? "created" : "overwritten";
 }
 
-async function updateGitignore(file: string): Promise<InitFileStatus> {
-  const text = await readFile(file, "utf8").catch(() => "");
-  const have = new Set(text.split(/\r?\n/).map((l) => l.trim()));
-  const missing = GITIGNORE_LINES.filter((l) => !have.has(l));
-  if (missing.length === 0) return "unchanged";
-  const prefix = text === "" || text.endsWith("\n") ? "" : "\n";
-  await writeFile(file, `${text}${prefix}# imgfit (cache, backup, lock, file tạm)\n${missing.join("\n")}\n`, "utf8");
-  return text === "" ? "created" : "updated";
-}
-
-/** `imgfit init`: imgfit.json + imgfit.schema.json + .gitignore entries. Never overwrites without `force`. */
+/** `imgfit init`: imgfit.json (sample presets) + imgfit.schema.json. Never overwrites without `force`. */
 export async function init(opts: InitOptions = {}): Promise<InitResult> {
   const cwd = path.resolve(opts.cwd ?? process.cwd());
-  const profile = opts.profile ?? "generic";
-  if (!["generic", "web", "unity"].includes(profile)) throw new ImgfitError("E_USAGE", `profile không hợp lệ: ${profile}`);
   const rel = (p: string) => toPosix(path.relative(cwd, p));
   const force = opts.force ?? false;
-
   const configPath = path.join(cwd, CONFIG_FILENAME);
   const schemaPath = path.join(cwd, "imgfit.schema.json");
   return {
     schemaVersion: 1,
     command: "init",
-    profile,
     files: [
-      { path: rel(configPath), status: await writeConfig(configPath, profile, force) },
+      { path: rel(configPath), status: await writeConfig(configPath, force) },
       { path: rel(schemaPath), status: await writeSchema(schemaPath, force) },
-      { path: ".gitignore", status: await updateGitignore(path.join(cwd, ".gitignore")) },
     ],
   };
 }

@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { ImgfitError } from "../core/errors.js";
-import { loadConfig } from "../project/config/load.js";
-import { CONFIG_FILENAME, type ProjectConfig } from "../project/config/types.js";
+import { loadConfig } from "../config/load.js";
+import { CONFIG_FILENAME, type PresetConfigSet } from "../config/types.js";
 import { BatchStore } from "./batches.js";
 import { PreviewStore } from "./previews.js";
 import { SessionStore } from "./sessions.js";
@@ -11,26 +11,25 @@ import { SessionStore } from "./sessions.js";
 export interface ServerContext {
   root: string;
   configFile: string;
-  env: NodeJS.ProcessEnv | undefined;
   sessions: SessionStore;
   batches: BatchStore;
   previews: PreviewStore;
-  loadProject(): Promise<ProjectConfig>;
+  /** Presets from <root>/imgfit.json. */
+  loadPresets(): Promise<PresetConfigSet>;
 }
 
-export async function createServerContext(root: string, env: NodeJS.ProcessEnv | undefined): Promise<ServerContext> {
+export async function createServerContext(root: string): Promise<ServerContext> {
   const sessions = await SessionStore.create();
   const configFile = path.join(root, CONFIG_FILENAME);
   return {
     root,
     configFile,
-    env,
     sessions,
     batches: new BatchStore(),
     previews: await PreviewStore.create(sessions.base),
-    loadProject: async () => {
+    loadPresets: async () => {
       if (!existsSync(configFile)) throw new ImgfitError("E_CONFIG_NOT_FOUND", `Không có ${CONFIG_FILENAME} trong ${root}`);
-      return loadConfig(configFile, env ? { env } : {});
+      return loadConfig(configFile);
     },
   };
 }

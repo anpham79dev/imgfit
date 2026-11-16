@@ -3,20 +3,17 @@ import { TOOL_NAME, versions } from "../version.js";
 import type { Issue } from "./errors.js";
 
 /** Version of the JSON output structure. Only bumped on breaking changes. */
-export const RESULT_SCHEMA_VERSION = 1;
+export const RESULT_SCHEMA_VERSION = 2;
 
 /**
  * - planned: dry-run, will be processed (see `action`)
  * - created / replaced: written
- * - unchanged: `run` found source + preset + output unchanged → not re-encoded
- * - adopted: `run --adopt` took an existing output under management
- * - skipped: intentionally skipped (--skip-existing)
+ * - skipped: intentionally not written (--skip-existing, smallInput=skip…); the reason is in `warnings`
  * - failed / cancelled
- * - pass / warn / fail: results of `check`
  */
-export type FileStatus = "planned" | "created" | "replaced" | "unchanged" | "adopted" | "skipped" | "failed" | "cancelled" | "pass" | "warn" | "fail";
+export type FileStatus = "planned" | "created" | "replaced" | "skipped" | "failed" | "cancelled";
 export type RunStatus = "ok" | "failed" | "aborted" | "cancelled";
-export type FileAction = "create" | "replace" | "adopt" | null;
+export type FileAction = "create" | "replace" | null;
 
 export interface FileResult {
   /** Input path (posix, relative to the command's base directory when inside it). */
@@ -26,7 +23,6 @@ export interface FileResult {
   status: FileStatus;
   /** What will be / was done to the output (most useful for dry-runs). */
   action: FileAction;
-  rule: string | null;
   preset: string | null;
   format: OutputFormat | null;
   inputBytes: number | null;
@@ -46,15 +42,10 @@ export interface Summary {
   processed: number;
   created: number;
   replaced: number;
-  unchanged: number;
-  adopted: number;
   planned: number;
   skipped: number;
   failed: number;
   cancelled: number;
-  pass: number;
-  warn: number;
-  fail: number;
   inputBytes: number;
   outputBytes: number;
   /** Sum of (inputBytes - outputBytes) over written files. May be negative. */
@@ -73,7 +64,7 @@ export interface Report {
   files: FileResult[];
   /** Batch-level errors (e.g. a collision that aborted everything before writing). */
   errors: Issue[];
-  /** Batch-level warnings (orphaned outputs, stale lock, version mismatch…). */
+  /** Batch-level warnings. */
   warnings: Issue[];
 }
 
@@ -83,7 +74,6 @@ export function newFileResult(file: string, init: Partial<FileResult> = {}): Fil
     destination: null,
     status: "planned",
     action: null,
-    rule: null,
     preset: null,
     format: null,
     inputBytes: null,
@@ -104,15 +94,10 @@ export function summarize(files: FileResult[]): Summary {
     processed: 0,
     created: 0,
     replaced: 0,
-    unchanged: 0,
-    adopted: 0,
     planned: 0,
     skipped: 0,
     failed: 0,
     cancelled: 0,
-    pass: 0,
-    warn: 0,
-    fail: 0,
     inputBytes: 0,
     outputBytes: 0,
     bytesSaved: 0,
@@ -146,7 +131,7 @@ export function makeReport(input: ReportInput): Report {
   let status: RunStatus = "ok";
   if (errors.length > 0) status = "aborted";
   else if (input.cancelled) status = "cancelled";
-  else if (summary.failed > 0 || summary.fail > 0) status = "failed";
+  else if (summary.failed > 0) status = "failed";
   const v = versions();
   return {
     schemaVersion: RESULT_SCHEMA_VERSION,

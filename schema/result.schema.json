@@ -80,7 +80,6 @@
         "destination",
         "status",
         "action",
-        "rule",
         "preset",
         "format",
         "inputBytes",
@@ -108,31 +107,19 @@
             "planned",
             "created",
             "replaced",
-            "unchanged",
-            "adopted",
             "skipped",
             "failed",
-            "cancelled",
-            "pass",
-            "warn",
-            "fail"
+            "cancelled"
           ],
-          "description": "planned: dry-run · created/replaced: đã ghi · unchanged: run thấy không đổi · adopted: run --adopt · skipped · failed · cancelled · pass/warn/fail: kết quả check"
+          "description": "planned: dry-run · created/replaced: đã ghi · skipped: cố ý không ghi (lý do trong warnings) · failed · cancelled"
         },
         "action": {
           "enum": [
             "create",
             "replace",
-            "adopt",
             null
           ],
           "description": "Việc sẽ/đã làm với output (rõ nhất khi dry-run)."
-        },
-        "rule": {
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "preset": {
           "type": [
@@ -199,15 +186,10 @@
         "processed",
         "created",
         "replaced",
-        "unchanged",
-        "adopted",
         "planned",
         "skipped",
         "failed",
         "cancelled",
-        "pass",
-        "warn",
-        "fail",
         "inputBytes",
         "outputBytes",
         "bytesSaved"
@@ -247,21 +229,6 @@
         "bytesSaved": {
           "type": "integer",
           "description": "inputBytes - outputBytes trên các file đã ghi; có thể âm."
-        },
-        "unchanged": {
-          "type": "integer"
-        },
-        "adopted": {
-          "type": "integer"
-        },
-        "pass": {
-          "type": "integer"
-        },
-        "warn": {
-          "type": "integer"
-        },
-        "fail": {
-          "type": "integer"
         }
       }
     },
@@ -282,7 +249,7 @@
       ],
       "properties": {
         "schemaVersion": {
-          "const": 1
+          "const": 2
         },
         "tool": {
           "$ref": "#/$defs/Tool"
@@ -290,9 +257,6 @@
         "command": {
           "enum": [
             "resize",
-            "run",
-            "adopt",
-            "check",
             "exec"
           ]
         },
@@ -336,7 +300,7 @@
           "items": {
             "$ref": "#/$defs/Issue"
           },
-          "description": "Cảnh báo cấp batch (output mồ côi, lock cũ, version lệch…)."
+          "description": "Cảnh báo cấp batch."
         }
       }
     },
@@ -351,7 +315,7 @@
       ],
       "properties": {
         "schemaVersion": {
-          "const": 1
+          "const": 2
         },
         "tool": {
           "$ref": "#/$defs/Tool"

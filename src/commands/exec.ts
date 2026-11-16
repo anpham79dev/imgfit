@@ -9,10 +9,10 @@ import { type TransformOptions, validateTransformOptions } from "../image/option
 import type { OnConflict } from "../io/publish.js";
 import { executeJobs, type ProgressEvent } from "../pipeline/batch.js";
 import { assertExtension, displayPath, fail, type Job, prepareJob } from "../pipeline/job.js";
-import { findConfig } from "../project/config/find.js";
-import { loadConfig } from "../project/config/load.js";
-import type { ProjectConfig } from "../project/config/types.js";
-import { validateWith } from "../project/config/validate.js";
+import { findConfig } from "../config/find.js";
+import { loadConfig } from "../config/load.js";
+import type { PresetConfigSet } from "../config/types.js";
+import { validateWith } from "../config/validate.js";
 
 /** One job of an exec spec (mirrors schema/job.schema.json). */
 export interface ExecItem {
@@ -65,7 +65,7 @@ export async function parseExecSpec(text: string): Promise<ExecSpec> {
 }
 
 /** Preset (if any) overlaid with the item's inline options. Throws on invalid combinations. */
-function transformFor(item: ExecItem, cfg: ProjectConfig | undefined): TransformOptions {
+function transformFor(item: ExecItem, cfg: PresetConfigSet | undefined): TransformOptions {
   const base = item.preset ? cfg?.presets.get(item.preset)?.transform : undefined;
   if (item.preset && !base) throw new ImgfitError("E_USAGE", `Preset "${item.preset}" không có trong config`);
   const size = item.size ?? (base ? [base.width, base.height] : undefined);

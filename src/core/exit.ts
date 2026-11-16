@@ -20,12 +20,10 @@ export function exitCodeForError(code: ErrorCode): number {
     case "E_INPUT_NOT_FOUND":
     case "E_CONFIG_NOT_FOUND":
     case "E_CONFIG_INVALID":
-    case "E_FORMAT_NOT_ALLOWED":
       return EXIT.USAGE;
     case "E_PERMISSION":
     case "E_DISK_FULL":
     case "E_INTERNAL":
-    case "E_LOCKED":
       return EXIT.ENVIRONMENT;
     case "E_CANCELLED":
       return EXIT.CANCELLED;

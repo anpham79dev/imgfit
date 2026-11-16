@@ -2,7 +2,7 @@ import { ImgfitError } from "./errors.js";
 import { sanitizeSegment } from "./paths.js";
 
 /** Placeholders allowed in output name templates. This list is a public contract. */
-export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir", "id"] as const;
+export const PLACEHOLDERS = ["name", "ext", "w", "h", "preset", "dir"] as const;
 export type Placeholder = (typeof PLACEHOLDERS)[number];
 
 export interface TemplateVars {
@@ -14,8 +14,6 @@ export interface TemplateVars {
   preset?: string;
   /** relative sub-directory (posix, may be empty) */
   dir: string;
-  /** ID looked up from the rule's names file (imgfit.names.json) */
-  id?: string;
 }
 
 const TOKEN = /\{([^{}]*)\}/g;
@@ -54,9 +52,6 @@ function placeholderValue(key: Placeholder, vars: TemplateVars): string {
       return sanitizeSegment(vars.preset);
     case "dir":
       return DIR_MARK; // expanded per segment below
-    case "id":
-      if (vars.id === undefined) throw new ImgfitError("E_NAME_MISSING", `Template dùng {id} nhưng không có ID cho "${vars.name}"`);
-      return sanitizeSegment(vars.id);
   }
 }
 

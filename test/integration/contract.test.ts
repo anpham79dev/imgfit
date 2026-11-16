@@ -18,27 +18,27 @@ beforeEach(async () => {
   await mkdir(path.join(dir, "img"), { recursive: true });
   await solid(path.join(dir, "img", "a.jpg"), 300, 200, "#f00");
   await solid(path.join(dir, "img", "tiny.jpg"), 10, 10, "#f00");
+  await writeFile(path.join(dir, "job.json"), JSON.stringify({ schemaVersion: 1, jobs: [{ input: "img/a.jpg", output: "o3/a.webp", preset: "t" }] }));
   await writeFile(
     path.join(dir, "imgfit.json"),
-    JSON.stringify({ schemaVersion: 1, roots: { input: "img", output: "out" }, presets: { t: { size: [64, 64], mode: "cover", format: "webp" } }, rules: [{ id: "r", from: "*.jpg", preset: "t", to: "{name}.{ext}" }] }),
+    JSON.stringify({ schemaVersion: 2, presets: { t: { size: [64, 64], mode: "cover", format: "webp" } } }),
   );
 });
 afterEach(async () => cleanup());
 
 describe("JSON contract", () => {
-  it("resize / run / dry-run / lỗi tham số đều khớp result.schema.json", async () => {
+  it("resize / exec / dry-run / lỗi tham số đều khớp result.schema.json", async () => {
     const validate = new Ajv2020({ allErrors: true, strict: false }).compile(await load("result"));
     const outputs = [
       await runCli(["resize", "img", "-s", "32", "-m", "cover", "-o", "o1", "--json"], dir),
       await runCli(["resize", "img", "-s", "32", "-o", "o2", "--dry-run", "--json"], dir),
-      await runCli(["run", "--dry-run", "--json"], dir),
-      await runCli(["run", "--json"], dir),
-      await runCli(["run", "--json"], dir),
       await runCli(["resize", "img", "-s", "nope", "-o", "x", "--json"], dir),
-      await runCli(["run", "--config", "missing.json", "--json"], dir),
+      await runCli(["exec", "--file", "missing.json"], dir),
     ];
-    for (const o of outputs) {
-      const doc = JSON.parse(o.stdout);
+    const ex = await runCli(["exec", "--file", "job.json", "--report-json", "exec.json"], dir);
+    expect(ex.code).toBe(0);
+    const docs = [...outputs.map((o) => JSON.parse(o.stdout)), JSON.parse(await readFile(path.join(dir, "exec.json"), "utf8"))];
+    for (const doc of docs) {
       const ok = validate(doc);
       expect(ok, `${doc.command}: ${JSON.stringify(validate.errors)}`).toBe(true);
       for (const f of doc.files ?? []) {

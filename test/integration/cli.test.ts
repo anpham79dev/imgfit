@@ -18,7 +18,7 @@ describe("CLI", () => {
     const pkg = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8"));
     expect((await runCli(["--version"], dir)).stdout.trim()).toBe(pkg.version);
     const j = JSON.parse((await runCli(["--version", "--json"], dir)).stdout);
-    expect(j).toMatchObject({ schemaVersion: 1, imgfit: pkg.version });
+    expect(j).toMatchObject({ schemaVersion: 2, imgfit: pkg.version });
     expect(j.sharp).toBeTruthy();
     expect(j.libvips).toBeTruthy();
   });
@@ -27,7 +27,7 @@ describe("CLI", () => {
     const r = await runCli(["resize", "raw", "-s", "128x128", "-m", "cover", "-f", "webp", "-o", "out", "--json"], dir);
     expect(r.code).toBe(0);
     const report = JSON.parse(r.stdout);
-    expect(report).toMatchObject({ schemaVersion: 1, command: "resize", status: "ok", summary: { created: 1 } });
+    expect(report).toMatchObject({ schemaVersion: 2, command: "resize", status: "ok", summary: { created: 1 } });
     expect(report.files[0]).toMatchObject({ file: "raw/a.jpg", destination: "out/a.webp", outputPx: [128, 128], format: "webp" });
     expect(await listFiles(path.join(dir, "out"))).toEqual(["a.webp"]);
   });

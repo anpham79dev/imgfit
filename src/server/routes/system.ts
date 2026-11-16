@@ -18,16 +18,16 @@ export function systemRoutes(ctx: ServerContext): Router {
   const r = Router();
 
   r.get("/health", (_req, res) => {
-    res.json({ ok: true, versions: versions(), project: existsSync(ctx.configFile) });
+    res.json({ ok: true, versions: versions(), config: existsSync(ctx.configFile) });
   });
 
   r.get(
     "/presets",
     route(async (_req, res) => {
       const project = await ctx
-        .loadProject()
+        .loadPresets()
         .then((cfg) => Object.fromEntries([...cfg.presets].map(([k, p]) => [k, { ...p.transform }])))
-        .catch(() => ({})); // no/invalid project → quick presets only
+        .catch(() => ({})); // no/invalid imgfit.json → built-in presets only
       res.json({ quick: QUICK_PRESETS, project });
     }),
   );

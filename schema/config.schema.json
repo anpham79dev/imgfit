@@ -2,80 +2,23 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://imgfit.local/schema/config.schema.json",
   "title": "imgfit config (imgfit.json)",
+  "description": "Preset dùng chung cho resize --preset, exec và UI.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "presets", "rules"],
+  "required": ["schemaVersion", "presets"],
   "properties": {
     "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
-    "profile": {
-      "enum": ["generic", "web", "unity"],
-      "default": "generic",
-      "description": "Bộ mặc định + whitelist định dạng output. generic: jpg/png/webp/avif; web: jpg/png/webp/avif; unity: jpg/png."
-    },
-    "env": {
-      "type": "array",
-      "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
-      "uniqueItems": true,
-      "description": "Biến môi trường được phép dùng dạng ${VAR} trong roots."
-    },
-    "roots": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "input": { "type": "string", "minLength": 1, "default": ".", "description": "Thư mục ảnh nguồn (tương đối theo thư mục chứa imgfit.json)." },
-        "output": { "type": "string", "minLength": 1, "default": ".", "description": "Gốc output; mọi `to` tính theo đây và không được ra ngoài." }
-      }
-    },
-    "defaults": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "upscale": { "type": "boolean" },
-        "stripMetadata": { "type": "boolean" },
-        "onConflict": { "enum": ["error", "replace", "skip"] },
-        "jobs": { "type": "integer", "minimum": 1, "maximum": 64 },
-        "smallInput": { "$ref": "#/$defs/smallInput" },
-        "background": { "$ref": "#/$defs/color" },
-        "quality": { "$ref": "#/$defs/quality" }
-      }
-    },
+    "schemaVersion": { "const": 2 },
     "presets": {
       "type": "object",
       "minProperties": 1,
       "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$" },
       "additionalProperties": { "$ref": "#/$defs/preset" }
-    },
-    "rules": {
-      "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/rule" }
-    },
-    "budget": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": { "maxFileKB": { "type": "number", "exclusiveMinimum": 0 } }
-    },
-    "cache": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": { "path": { "type": "string", "minLength": 1, "default": ".imgfit/cache.json" } }
-    },
-    "cropOverrides": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": { "path": { "type": "string", "minLength": 1, "default": "imgfit.crops.json" } }
-    },
-    "managed": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": { "path": { "type": "string", "minLength": 1, "default": "imgfit.managed.json" } }
     }
   },
   "$defs": {
     "quality": { "type": "integer", "minimum": 1, "maximum": 100 },
     "color": { "type": "string", "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$" },
-    "smallInput": { "enum": ["error", "keep", "pad"] },
     "preset": {
       "type": "object",
       "additionalProperties": false,
@@ -95,12 +38,8 @@
         "format": { "enum": ["keep", "jpg", "png", "webp", "avif"], "default": "keep" },
         "quality": { "$ref": "#/$defs/quality" },
         "upscale": { "type": "boolean" },
-        "smallInput": { "$ref": "#/$defs/smallInput" },
-        "crop": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": { "position": { "enum": ["center", "top", "attention"] } }
-        },
+        "smallInput": { "enum": ["error", "keep", "pad"] },
+        "position": { "enum": ["center", "top", "attention"] },
         "background": { "$ref": "#/$defs/color" },
         "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },
         "stripMetadata": { "type": "boolean" },
@@ -111,37 +50,7 @@
             "compressionLevel": { "type": "integer", "minimum": 0, "maximum": 9 },
             "palette": { "type": "boolean" }
           }
-        },
-        "blockMultiple": { "type": "integer", "minimum": 1, "maximum": 64 },
-        "maxFileKB": { "type": "number", "exclusiveMinimum": 0 }
-      }
-    },
-    "rule": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "from", "preset", "to"],
-      "properties": {
-        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$" },
-        "from": {
-          "description": "Glob (dùng /) tương đối theo roots.input.",
-          "oneOf": [
-            { "type": "string", "minLength": 1 },
-            { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
-          ]
-        },
-        "exclude": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "preset": {
-          "oneOf": [
-            { "type": "string", "minLength": 1 },
-            { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
-          ]
-        },
-        "to": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Template tương đối theo roots.output. Placeholder: {name} {ext} {w} {h} {preset} {dir} {id}."
-        },
-        "names": { "type": "string", "minLength": 1, "description": "File mapping nguồn → id cho {id}, vd. imgfit.names.json" }
+        }
       }
     }
   }

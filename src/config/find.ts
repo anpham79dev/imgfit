@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import path from "node:path";
-import { ImgfitError } from "../../core/errors.js";
+import { ImgfitError } from "../core/errors.js";
 import { CONFIG_FILENAME } from "./types.js";
 
 /** Locates imgfit.json: explicit argument → IMGFIT_CONFIG → walk up from cwd to the filesystem root. */

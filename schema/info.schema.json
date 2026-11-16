@@ -20,7 +20,7 @@
     "bytes"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "file": { "type": "string" },
     "format": { "enum": ["jpeg", "png", "webp", "tiff", "gif", "avif"], "description": "Theo nội dung file, không theo đuôi." },
     "keepAs": { "enum": ["jpg", "png", "webp", "avif", null], "description": "Định dạng output khi --format keep; null nếu không giữ được." },

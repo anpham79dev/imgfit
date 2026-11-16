@@ -16,8 +16,6 @@ export interface CliIO {
   isTTY?: boolean;
   /** Reads all of stdin (for `exec --stdin`). */
   readStdin?: () => Promise<string>;
-  /** Yes/no prompt (for `run --adopt` without --yes). Absent → --yes is required. */
-  confirm?: (destinations: string[]) => Promise<boolean>;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -85,16 +83,5 @@ export class CliContext {
     if (!o.verbose || this.json) return;
     const v = versions();
     this.io.stderr.write(`imgfit ${v.imgfit} · sharp ${v.sharp} · libvips ${v.libvips} · node ${v.node} · ${v.platform}-${v.arch}\n`);
-  }
-
-  /** Options every project command (run/check) passes through. */
-  projectOptions(o: Opts) {
-    return {
-      ...(this.io.cwd ? { cwd: this.io.cwd } : {}),
-      ...(this.io.env ? { env: this.io.env } : {}),
-      ...(this.io.signal ? { signal: this.io.signal } : {}),
-      ...(o.config ? { config: o.config as string } : {}),
-      ...(o.jobs !== undefined ? { jobs: o.jobs as number } : {}),
-    };
   }
 }

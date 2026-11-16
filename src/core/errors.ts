@@ -24,20 +24,9 @@ export const ERROR_CODES = [
   "E_WRITE_FAILED",
   "E_CANCELLED",
   "E_INTERNAL",
-  // config / project
+  // config
   "E_CONFIG_NOT_FOUND",
   "E_CONFIG_INVALID",
-  "E_FORMAT_NOT_ALLOWED",
-  "E_NAME_MISSING",
-  "E_LOCKED",
-  // run / check
-  "E_OUTPUT_MODIFIED",
-  "E_OUTPUT_MISSING",
-  "E_OUTPUT_STALE",
-  "E_OUTPUT_NOT_REPRODUCIBLE",
-  "E_DIMENSIONS_MISMATCH",
-  "E_FORMAT_MISMATCH",
-  "E_BUDGET_EXCEEDED",
   // web UI
   "E_FORBIDDEN",
   "E_NOT_FOUND",
@@ -53,13 +42,6 @@ export const WARNING_CODES = [
   "W_SKIP_EXISTING_UNVERIFIED",
   "W_METADATA_KEPT",
   "W_BLOCK_ROUNDED",
-  "W_OUTPUT_UNMANAGED",
-  "W_OUTPUT_ORPHAN",
-  "W_OUTPUT_MODIFIED",
-  "W_DUPLICATE_SOURCE",
-  "W_VERSION_MISMATCH",
-  "W_STALE_LOCK",
-  "W_STATE_REBUILT",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

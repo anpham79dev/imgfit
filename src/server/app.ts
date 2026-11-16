@@ -17,7 +17,6 @@ export interface UiServerOptions {
   port?: number;
   /** Built UI directory (default: dist/ui next to the server). */
   uiDir?: string;
-  env?: NodeJS.ProcessEnv;
 }
 
 export interface UiServer {
@@ -38,7 +37,7 @@ function findUiDir(): string | undefined {
 
 /** Starts the loopback-only UI server. Security layers are documented in security.ts. */
 export async function startUiServer(opts: UiServerOptions = {}): Promise<UiServer> {
-  const ctx = await createServerContext(path.resolve(opts.root ?? process.cwd()), opts.env);
+  const ctx = await createServerContext(path.resolve(opts.root ?? process.cwd()));
   const secrets = newSecrets();
   const uiDir = opts.uiDir ?? findUiDir();
   let port = opts.port ?? 0;

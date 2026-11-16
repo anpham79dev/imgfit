@@ -1,7 +1,7 @@
 {
   "name": "imgfit",
   "version": "0.1.0",
-  "description": "Tối ưu, chuẩn hóa và kiểm tra asset ảnh trước khi đưa vào repository. Dùng từ mọi ngôn ngữ qua CLI + JSON.",
+  "description": "Engine xử lý ảnh dùng chung (resize, chuyển định dạng, watermark) trước khi upload. Gọi từ mọi ngôn ngữ qua CLI + JSON.",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
@@ -27,7 +27,8 @@
     "node": ">=20.15.0"
   },
   "scripts": {
-    "build": "npm run build:core && npm run build:ui",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && npm run build:core && npm run build:ui",
     "build:core": "tsc -p tsconfig.build.json",
     "build:ui": "vite build --config ui/vite.config.ts",
     "dev:ui": "vite --config ui/vite.config.ts",
@@ -45,7 +46,7 @@
     "optimize",
     "sharp",
     "cli",
-    "assets"
+    "watermark"
   ],
   "dependencies": {
     "ajv": "^8.20.0",

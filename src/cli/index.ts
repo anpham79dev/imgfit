@@ -6,7 +6,6 @@ import { registerExec } from "./commands/exec.js";
 import { registerInit } from "./commands/init.js";
 import { registerInspect } from "./commands/inspect.js";
 import { registerResize } from "./commands/resize.js";
-import { registerRun } from "./commands/run.js";
 import { registerUi } from "./commands/ui.js";
 import { CliContext, type CliIO } from "./context.js";
 import { errorDocument } from "./format.js";
@@ -17,7 +16,7 @@ function buildProgram(ctx: CliContext): Command {
   const program = new Command();
   program
     .name("imgfit")
-    .description("Tối ưu, chuẩn hóa và kiểm tra asset ảnh trước khi đưa vào repository.")
+    .description("Engine xử lý ảnh: resize, chuyển định dạng, watermark. Gọi được từ mọi ngôn ngữ qua CLI + JSON.")
     .usage("<command> [options]")
     .option("-V, --version", "in version (thêm --json để có version sharp/libvips)")
     .exitOverride()
@@ -34,7 +33,6 @@ function buildProgram(ctx: CliContext): Command {
     });
 
   registerResize(program, ctx);
-  registerRun(program, ctx);
   registerInit(program, ctx);
   registerExec(program, ctx);
   registerInspect(program, ctx);
@@ -51,7 +49,8 @@ function buildProgram(ctx: CliContext): Command {
  * process.exit, so it can be tested in-process and embedded.
  */
 export async function main(argv: string[], io: CliIO): Promise<number> {
-  const ctx = new CliContext(io, argv.includes("--json"), argv);
+  // exec is machine-facing: its stdout is always JSON (NDJSON), errors included
+  const ctx = new CliContext(io, argv.includes("--json") || argv[0] === "exec", argv);
 
   if (argv[0] === "--version" || argv[0] === "-V") {
     if (ctx.json) ctx.writeJson({ schemaVersion: RESULT_SCHEMA_VERSION, ...versions() });

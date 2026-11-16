@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import Ajv2020Module from "ajv/dist/2020.js";
-import { type ErrorCode, ImgfitError } from "../../core/errors.js";
+import { type ErrorCode, ImgfitError } from "../core/errors.js";
 
 type Validate = ((data: unknown) => boolean) & { errors?: Array<{ instancePath: string; message?: string; params?: unknown }> | null };
 
@@ -10,7 +10,7 @@ const cache = new Map<string, Validate>();
 export async function schemaValidator(name: "config" | "job"): Promise<Validate> {
   const hit = cache.get(name);
   if (hit) return hit;
-  const schema = JSON.parse(await readFile(new URL(`../../../schema/${name}.schema.json`, import.meta.url), "utf8"));
+  const schema = JSON.parse(await readFile(new URL(`../../schema/${name}.schema.json`, import.meta.url), "utf8"));
   // ajv ships CJS; under NodeNext the default export may be nested
   const Ajv2020 = ((Ajv2020Module as unknown as { default?: unknown }).default ?? Ajv2020Module) as new (o: object) => { compile: (s: object) => Validate };
   // strictRequired is off: `anyOf: [{required: [...]}]` patterns in job.schema.json are intentional

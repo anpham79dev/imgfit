@@ -111,7 +111,6 @@ export function httpStatusFor(code: string): number {
     case "E_INPUT_TOO_LARGE":
     case "E_SMALL_INPUT":
     case "E_FORMAT_UNSUPPORTED":
-    case "E_NAME_MISSING":
       return 400;
     case "E_FORBIDDEN":
     case "E_PATH_UNSAFE":
@@ -119,7 +118,6 @@ export function httpStatusFor(code: string): number {
     case "E_NOT_FOUND":
     case "E_INPUT_NOT_FOUND":
       return 404;
-    case "E_LOCKED":
     case "E_OUTPUT_CONFLICT":
       return 409;
     case "E_DISK_FULL":
