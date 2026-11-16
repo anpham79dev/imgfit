@@ -1,5 +1,5 @@
 <?php
-// Typical hand-written Intervention Image v2 code (see docs/imgfit-refactor-plan.md §3.1):
+// Typical hand-written Intervention Image v2 code (see docs/plan.md §3.1):
 //   landscape (w > h) → resize by width, otherwise by height; aspectRatio(); save as .jpg.
 //   Optionally upsize() (in v2 that means "do not enlarge"), which much hand-written code forgets.
 //
