@@ -21,6 +21,8 @@ export interface ProbeResult {
   pages: number;
   space: string;
   hasProfile: boolean;
+  /** EXIF, XMP or IPTC present (may contain GPS, camera, author…). */
+  hasMetadata: boolean;
   bytes: number;
 }
 
@@ -90,6 +92,7 @@ export async function probe(file: string, limitInputPixels = DEFAULT_LIMIT_INPUT
     pages,
     space: meta.space,
     hasProfile: meta.hasProfile,
+    hasMetadata: Boolean(meta.exif || meta.xmp || meta.iptc),
     bytes,
   };
 }

@@ -3,6 +3,7 @@
  */
 import { copyFile, readFile } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { exec, resize, type ResizeOptions } from "../../src/index.js";
 import { pixel } from "../helpers.js";
@@ -25,6 +26,7 @@ beforeAll(async () => {
     "webp-2400x1600.webp",
     "static-800x600.gif",
     "scan-1200x800.tiff",
+    "precompressed-640x480-q55.jpg",
   ]));
 });
 afterAll(async () => cleanup());
@@ -163,6 +165,40 @@ describe("hành vi: màu, nền, metadata", () => {
       expect(f.format).toBe(format);
       expect((await meta(file)).format).toBe(format === "avif" ? "heif" : "webp");
     }
+  });
+});
+
+describe("hành vi: dung lượng", () => {
+  const small = () => sample("precompressed-640x480-q55.jpg");
+
+  it("keepSmallerSource: cùng định dạng + kích thước mà nặng hơn → dùng ảnh gốc, kèm W_OUTPUT_LARGER", async () => {
+    const src = await readFile(small());
+    const { f, file } = await one("precompressed-640x480-q55.jpg", { width: 640, height: 480 });
+    expect(f.status).toBe("created");
+    expect(f.outputBytes).toBe(src.length);
+    expect(Buffer.compare(await readFile(file), src)).toBe(0);
+    expect(f.warnings.find((w) => w.code === "W_OUTPUT_LARGER")?.details).toMatchObject({ sourceBytes: src.length, usedSource: true });
+  });
+
+  it("keepSmallerSource=false hoặc ảnh gốc có EXIF → giữ bản encode, vẫn cảnh báo", async () => {
+    const off = await one("precompressed-640x480-q55.jpg", { width: 640, height: 480, keepSmallerSource: false });
+    expect(off.f.outputBytes).toBeGreaterThan((await readFile(small())).length);
+    expect(off.f.warnings.find((w) => w.code === "W_OUTPUT_LARGER")?.details).toMatchObject({ usedSource: false, reason: "keepSmallerSource=false" });
+
+    const withExif = path.join(dir, "exif-small.jpg");
+    await sharp(await readFile(small()))
+      .withExif({ IFD0: { Make: "camera" } })
+      .jpeg({ quality: 55, mozjpeg: true })
+      .toFile(withExif);
+    const r = await resize({ inputs: [withExif], output: path.join(dir, "out", "exif-small"), width: 640, height: 480, mode: "fit", format: "jpg", cwd: dir });
+    const f = r.files[0];
+    expect(f?.warnings.find((w) => w.code === "W_OUTPUT_LARGER")?.details).toMatchObject({ usedSource: false });
+    expect((await meta(path.resolve(dir, f?.destination ?? ""))).exif).toBeUndefined();
+  });
+
+  it("output nhỏ hơn ảnh gốc: không cảnh báo", async () => {
+    const { f } = await one("landscape-3000x2000.jpg", { width: 640, height: 480 });
+    expect(f.warnings.map((w) => w.code)).not.toContain("W_OUTPUT_LARGER");
   });
 });
 

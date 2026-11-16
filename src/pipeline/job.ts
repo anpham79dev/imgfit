@@ -3,9 +3,9 @@
  * front-end (resize / run / exec / web UI) uses:
  *   prepare (probe + plan) → preflight collisions → encode to a temp file → verify → publish safely.
  */
-import { mkdir } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { ImgfitError, type Issue, normalizeError } from "../core/errors.js";
+import { ImgfitError, type Issue, normalizeError, warning } from "../core/errors.js";
 import { fingerprint, hashFile } from "../core/fingerprint.js";
 import { assertSafeDestination, collisionKey, isInside, toPosix } from "../core/paths.js";
 import type { FileResult } from "../core/report.js";
@@ -128,7 +128,38 @@ export interface ProcessOutcome {
   hash: string;
 }
 
-/** Encode → verify → publish. Throws ImgfitError on failure; always removes the temp file. */
+/** Why the source bytes cannot replace a larger output, or null when they can. */
+function sourceSwapBlocker(job: Job): string | null {
+  const p = job.probe as ProbeResult;
+  const t = job.transform;
+  if (t.keepSmallerSource === false) return "keepSmallerSource=false";
+  if (p.orientation !== 1) return "ảnh gốc có EXIF orientation, phải xoay";
+  if (t.stripMetadata !== false && (p.hasMetadata || p.hasProfile)) return "ảnh gốc có metadata/ICC cần xóa";
+  if (p.space !== "srgb" && p.space !== "b-w") return `ảnh gốc ở không gian màu ${p.space}, phải chuyển sRGB`;
+  return null;
+}
+
+/**
+ * keepSmallerSource: same format + same size but larger than the input → use the input bytes when nothing
+ * else would change. Mutates `temp` and the result's warnings; returns the bytes now in `temp`.
+ */
+async function preferSmallerSource(job: Job, temp: string, encodedBytes: number): Promise<number> {
+  const p = job.probe as ProbeResult;
+  const plan = job.plan as TransformPlan;
+  const sameShape = plan.outputFormat === p.detected.keepAs && plan.outputSize.width === p.width && plan.outputSize.height === p.height;
+  if (!sameShape || encodedBytes <= p.bytes) return encodedBytes;
+  const blocker = sourceSwapBlocker(job);
+  const details = { encodedBytes, sourceBytes: p.bytes, usedSource: blocker === null, ...(blocker ? { reason: blocker } : {}) };
+  if (blocker) {
+    job.result.warnings.push(warning("W_OUTPUT_LARGER", `Output (${encodedBytes} B) nặng hơn ảnh gốc (${p.bytes} B) nhưng không dùng được ảnh gốc: ${blocker}`, details));
+    return encodedBytes;
+  }
+  await copyFile(job.source, temp);
+  job.result.warnings.push(warning("W_OUTPUT_LARGER", `Output (${encodedBytes} B) nặng hơn ảnh gốc (${p.bytes} B) cùng định dạng và kích thước; đã dùng ảnh gốc`, details));
+  return p.bytes;
+}
+
+/** Encode → verify → (keep smaller source) → publish. Throws ImgfitError on failure; always removes the temp file. */
 export async function processJob(job: Job, opts: ProcessOptions): Promise<ProcessOutcome> {
   const dest = job.dest as string;
   const temp = tempPathFor(dest);
@@ -137,6 +168,7 @@ export async function processJob(job: Job, opts: ProcessOptions): Promise<Proces
     await mkdir(path.dirname(dest), { recursive: true });
     await assertSafeDestination(opts.outputRoot, dest);
     const out = await transformToFile(job.source, temp, job.probe as ProbeResult, job.plan as TransformPlan, job.transform);
+    out.bytes = await preferSmallerSource(job, temp, out.bytes);
     const hash = `sha256:${await hashFile(temp)}`;
     await assertSafeDestination(opts.outputRoot, dest);
     const outcome = await publish(temp, dest, { onConflict: opts.onConflict, ...(opts.backupFile ? { backupFile: opts.backupFile } : {}) });

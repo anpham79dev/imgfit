@@ -45,6 +45,7 @@ export function toResizeOptions(inputs: string[], o: Opts, ctx: CliContext): Res
     ...(o.backupDir ? { backupDir: o.backupDir as string } : {}),
     ...(o.maxPixels ? { limitInputPixels: o.maxPixels as number } : {}),
     jpeg: { progressive: o.progressive as boolean },
+    keepSmallerSource: o.keepSmallerSource as boolean,
     png: {
       palette: o.pngPalette as boolean,
       ...(o.pngCompression !== undefined ? { compressionLevel: o.pngCompression as number } : {}),
@@ -73,6 +74,7 @@ export function registerResize(program: Command, ctx: CliContext): void {
     .option("--sharpen [sigma]", "sharpen sau khi giảm cỡ (sigma 0.3–10, mặc định 1)", parseSigma)
     .option("--keep-metadata", "giữ EXIF/XMP/ICC (mặc định bỏ, chuyển sRGB)", false)
     .option("--no-progressive", "JPEG baseline thay vì progressive (mặc định progressive)")
+    .option("--no-keep-smaller-source", "luôn ghi bản encode, kể cả khi nặng hơn ảnh gốc cùng định dạng/kích thước")
     .option("--png-palette", "PNG palette (nhỏ hơn, có thể giảm chất lượng)", false)
     .option("--png-compression <0-9>", "mức nén PNG (mặc định 6)", intArg("png-compression", 0, 9))
     .option("-j, --jobs <n>", `số ảnh xử lý song song (1–${MAX_JOBS})`, intArg("jobs", 1, MAX_JOBS), DEFAULT_JOBS)

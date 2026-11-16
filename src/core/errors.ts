@@ -42,6 +42,7 @@ export const WARNING_CODES = [
   "W_SMALL_INPUT_SKIPPED",
   "W_SKIP_EXISTING_UNVERIFIED",
   "W_METADATA_KEPT",
+  "W_OUTPUT_LARGER",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

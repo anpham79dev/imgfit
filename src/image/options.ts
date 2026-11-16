@@ -30,6 +30,12 @@ export interface TransformOptions {
   /** Default true: drop EXIF/XMP/ICC after converting to sRGB. */
   stripMetadata?: boolean;
   png?: { compressionLevel?: number; palette?: boolean };
+  /**
+   * Default true. When the output has the same format and size as the input but is LARGER, publish the
+   * source bytes instead — only if that changes nothing else (no metadata to strip, orientation 1,
+   * no watermark). Either way the report gets W_OUTPUT_LARGER.
+   */
+  keepSmallerSource?: boolean;
   /** progressive: default true (renders gradually on slow connections, usually a little smaller). */
   jpeg?: { progressive?: boolean };
   limitInputPixels?: number;
@@ -106,5 +112,6 @@ export function effectiveOptions(t: TransformOptions, outputFormat: OutputFormat
     stripMetadata: t.stripMetadata ?? true,
     png: t.png,
     progressive: outputFormat === "jpg" ? (t.jpeg?.progressive ?? true) : undefined,
+    keepSmallerSource: t.keepSmallerSource ?? true,
   };
 }

@@ -57,6 +57,7 @@
         "background": { "$ref": "#/$defs/color" },
         "sharpen": { "type": "number", "minimum": 0.3, "maximum": 10 },
         "stripMetadata": { "type": "boolean" },
+        "keepSmallerSource": { "type": "boolean", "default": true, "description": "Output cùng định dạng, cùng kích thước mà nặng hơn ảnh gốc → dùng ảnh gốc (khi không có metadata cần xóa, orientation 1, không watermark). Luôn kèm W_OUTPUT_LARGER." },
         "jpeg": {
           "type": "object",
           "additionalProperties": false,
