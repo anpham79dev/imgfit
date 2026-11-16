@@ -1,9 +1,9 @@
 # imgfit — run the CLI without installing Node on the host.
 #   docker build -t imgfit:0.1.0 .
-#   docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" imgfit:0.1.0 run
+#   docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" imgfit:0.1.0 resize photo.jpg --preset L -o out
 # --user so output files belong to you, not root.
 
-FROM node:22-bookworm-slim AS build
+FROM node:24-bookworm-slim AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -13,7 +13,7 @@ COPY ui ./ui
 COPY schema ./schema
 RUN npm run build && npm prune --omit=dev
 
-FROM node:22-bookworm-slim
+FROM node:24-bookworm-slim
 ENV NODE_ENV=production
 WORKDIR /opt/imgfit
 COPY --from=build /src/package.json ./
