@@ -2,7 +2,7 @@
  * Commander argument parsers. They throw InvalidArgumentError so commander reports usage errors (exit 2).
  */
 import { InvalidArgumentError } from "commander";
-import { type FormatOption, parseFormatOption } from "../image/formats.js";
+import { type FormatOption, type OutputFormat, parseFormatOption, parseOutputFormat } from "../image/formats.js";
 
 export function intArg(name: string, min: number, max: number) {
   return (value: string): number => {
@@ -42,6 +42,17 @@ export function parseSigma(value: string): number {
 export function parseFormat(value: string): FormatOption {
   try {
     return parseFormatOption(value);
+  } catch (err) {
+    throw new InvalidArgumentError((err as Error).message);
+  }
+}
+
+/** "png,webp" → ["png", "webp"]. */
+export function parseFormatList(value: string): OutputFormat[] {
+  try {
+    const list = value.split(",").filter((v) => v.trim() !== "").map(parseOutputFormat);
+    if (list.length === 0) throw new Error("danh sách rỗng");
+    return [...new Set(list)];
   } catch (err) {
     throw new InvalidArgumentError((err as Error).message);
   }

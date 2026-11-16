@@ -22,6 +22,9 @@ beforeAll(async () => {
     "gps-2400x1600.jpg",
     "landscape-3000x2000.jpg",
     "fake-ext-png.jpg",
+    "webp-2400x1600.webp",
+    "static-800x600.gif",
+    "scan-1200x800.tiff",
   ]));
 });
 afterAll(async () => cleanup());
@@ -120,6 +123,25 @@ describe("hành vi: màu, nền, metadata", () => {
     const { f } = await one("fake-ext-png.jpg", { format: "keep" });
     expect(f.format).toBe("png");
     expect(f.destination?.endsWith(".png")).toBe(true);
+  });
+
+  it("format {keep, fallback}: giữ PNG/WebP, còn lại (GIF, TIFF, JPG) → JPG", async () => {
+    const format = { keep: ["png", "webp"], fallback: "jpg" } as const;
+    const expected: Record<string, string> = {
+      "transparent-1200x800.png": "png",
+      "webp-2400x1600.webp": "webp",
+      "static-800x600.gif": "jpg",
+      "scan-1200x800.tiff": "jpg",
+      "landscape-3000x2000.jpg": "jpg",
+    };
+    for (const [name, fmt] of Object.entries(expected)) {
+      const { f, file } = await one(name, { width: 640, height: 480, format: { keep: [...format.keep], fallback: format.fallback } });
+      expect(f.status, name).toBe("created");
+      expect(f.format, name).toBe(fmt);
+      expect((await meta(file)).format).toBe(fmt === "jpg" ? "jpeg" : fmt);
+    }
+    // plain "keep" stays strict: a GIF cannot be kept
+    expect((await one("static-800x600.gif", { format: "keep" })).f.errors[0]?.code).toBe("E_FORMAT_UNSUPPORTED");
   });
 
   it("WebP và AVIF theo preset", async () => {

@@ -1,9 +1,17 @@
 import { type Command, Option } from "commander";
 import { DEFAULT_JOBS, DEFAULT_NAME_TEMPLATE, MAX_JOBS, resize, type ResizeOptions } from "../../commands/resize.js";
+import { ImgfitError } from "../../core/errors.js";
+import type { FormatOption, OutputFormat } from "../../image/formats.js";
 import type { CropPosition, Mode, SmallInputPolicy } from "../../image/geometry.js";
 import type { CliContext, Opts } from "../context.js";
 import { conflictFrom, withOutputOptions } from "../options.js";
-import { intArg, parseFocal, parseFormat, parseSigma, parseSize } from "../parsers.js";
+import { intArg, parseFocal, parseFormat, parseFormatList, parseSigma, parseSize } from "../parsers.js";
+
+/** `--keep png,webp --format jpg`: --format is the fallback and must be a concrete format. */
+function keepFallback(format: FormatOption): OutputFormat {
+  if (format === "keep" || typeof format === "object") throw new ImgfitError("E_USAGE", "--keep cần --format <jpg|png|webp|avif> làm định dạng fallback");
+  return format;
+}
 
 /** Maps parsed CLI options to the Node API options (pure; easy to test). */
 export function toResizeOptions(inputs: string[], o: Opts, ctx: CliContext): ResizeOptions {
@@ -16,7 +24,7 @@ export function toResizeOptions(inputs: string[], o: Opts, ctx: CliContext): Res
     width: size.width,
     height: size.height,
     mode: o.mode as Mode,
-    format: o.format as ResizeOptions["format"],
+    format: o.keep ? { keep: o.keep as OutputFormat[], fallback: keepFallback(o.format as FormatOption) } : (o.format as FormatOption),
     name: o.name as string,
     recursive: o.recursive as boolean,
     jobs: o.jobs as number,
@@ -52,6 +60,7 @@ export function registerResize(program: Command, ctx: CliContext): void {
     .requiredOption("-o, --output <dir>", "thư mục output (tương đối theo thư mục hiện tại)")
     .addOption(new Option("-m, --mode <mode>", "fit | cover | pad").choices(["fit", "cover", "pad"]).default("fit"))
     .option("-f, --format <format>", "keep | jpg | png | webp | avif", parseFormat, "keep")
+    .option("--keep <formats>", "giữ định dạng input nếu nằm trong danh sách (vd. png,webp), ngược lại dùng --format", parseFormatList)
     .option("-q, --quality <1-100>", "chất lượng encoder (mặc định: jpg 85, webp 82, avif 50)", intArg("quality", 1, 100))
     .option("-n, --name <template>", `template tên output; placeholder {name} {ext} {w} {h} {dir}`, DEFAULT_NAME_TEMPLATE)
     .option("-r, --recursive", "quét cả thư mục con khi input là thư mục", false)

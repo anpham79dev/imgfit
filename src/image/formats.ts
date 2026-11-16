@@ -2,7 +2,13 @@ import { ImgfitError } from "../core/errors.js";
 
 export const OUTPUT_FORMATS = ["jpg", "png", "webp", "avif"] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
-export type FormatOption = OutputFormat | "keep";
+/** Keep the input format when it is in `keep`, otherwise encode as `fallback`. */
+export interface KeepFormat {
+  keep: OutputFormat[];
+  fallback: OutputFormat;
+}
+/** A fixed output format, "keep" (input format; error when it cannot be kept) or a whitelist with a fallback. */
+export type FormatOption = OutputFormat | "keep" | KeepFormat;
 
 /** File extensions scanned when an input is a directory. */
 export const INPUT_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "tif", "tiff", "gif"] as const;
@@ -51,15 +57,39 @@ export function detectInputFormat(sharpFormat: string | undefined, compression: 
   }
 }
 
-export function parseFormatOption(value: string): FormatOption {
+export function parseOutputFormat(value: string): OutputFormat {
   const v = value.trim().toLowerCase();
-  if (v === "keep") return "keep";
   if (v === "jpeg") return "jpg";
   if ((OUTPUT_FORMATS as readonly string[]).includes(v)) return v as OutputFormat;
-  throw new ImgfitError("E_USAGE", `--format không hợp lệ: "${value}". Chọn: keep, ${OUTPUT_FORMATS.join(", ")}`);
+  throw new ImgfitError("E_USAGE", `Định dạng không hợp lệ: "${value}". Chọn: ${OUTPUT_FORMATS.join(", ")}`);
+}
+
+export function parseFormatOption(value: string): FormatOption {
+  if (value.trim().toLowerCase() === "keep") return "keep";
+  try {
+    return parseOutputFormat(value);
+  } catch {
+    throw new ImgfitError("E_USAGE", `--format không hợp lệ: "${value}". Chọn: keep, ${OUTPUT_FORMATS.join(", ")}`);
+  }
+}
+
+export function isKeepFormat(option: FormatOption): option is KeepFormat {
+  return typeof option === "object" && option !== null;
+}
+
+/** Throws E_USAGE when a format option is malformed (JSON input is not typed). */
+export function validateFormatOption(option: unknown): void {
+  const valid = (f: unknown) => typeof f === "string" && (OUTPUT_FORMATS as readonly string[]).includes(f);
+  if (option === "keep" || valid(option)) return;
+  if (option && typeof option === "object") {
+    const o = option as Partial<KeepFormat>;
+    if (Array.isArray(o.keep) && o.keep.length > 0 && o.keep.every(valid) && valid(o.fallback)) return;
+  }
+  throw new ImgfitError("E_USAGE", `format không hợp lệ: ${JSON.stringify(option)}. Dùng keep, ${OUTPUT_FORMATS.join(", ")} hoặc {"keep": [...], "fallback": "jpg"}`);
 }
 
 export function resolveOutputFormat(option: FormatOption, detected: DetectedFormat): OutputFormat {
+  if (isKeepFormat(option)) return detected.keepAs && option.keep.includes(detected.keepAs) ? detected.keepAs : option.fallback;
   if (option !== "keep") return option;
   if (!detected.keepAs) {
     throw new ImgfitError(

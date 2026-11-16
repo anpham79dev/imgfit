@@ -1,5 +1,5 @@
 import { ImgfitError } from "../core/errors.js";
-import type { FormatOption, OutputFormat } from "./formats.js";
+import { type FormatOption, type OutputFormat, validateFormatOption } from "./formats.js";
 import { type CropPosition, type Mode, type Point, SMALL_INPUT_POLICIES, type SmallInputPolicy } from "./geometry.js";
 
 /** Default input pixel limit (≈ 268 MP, same as sharp's default). Guards against decompression bombs. */
@@ -65,6 +65,7 @@ export function validateTransformOptions(opts: TransformOptions): void {
   intIn("quality", opts.quality, 1, 100);
   intIn("png.compressionLevel", opts.png?.compressionLevel, 0, 9);
   if (!["fit", "cover", "pad"].includes(opts.mode)) throw new ImgfitError("E_USAGE", `mode không hợp lệ: ${opts.mode}`);
+  validateFormatOption(opts.format);
   if (opts.smallInput && !SMALL_INPUT_POLICIES.includes(opts.smallInput)) {
     throw new ImgfitError("E_USAGE", `smallInput không hợp lệ: ${opts.smallInput}`);
   }

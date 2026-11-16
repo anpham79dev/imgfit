@@ -18,7 +18,8 @@ function apply(key: string) {
     width: Number(v.width ?? model.value.width),
     height: Number(v.height ?? model.value.height),
     mode: (v.mode as TransformForm["mode"]) ?? "fit",
-    format: (v.format as TransformForm["format"]) ?? "keep",
+    // {keep, fallback} presets cannot be shown in this form: use the fallback
+    format: (v.format && typeof v.format === "object" ? (v.format as { fallback: TransformForm["format"] }).fallback : (v.format as TransformForm["format"])) ?? "keep",
     quality: (v.quality as number | undefined) ?? null,
     position: (v.position as TransformForm["position"]) ?? "center",
     background: (v.background as string | undefined) ?? "",

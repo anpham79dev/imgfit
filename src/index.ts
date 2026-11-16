@@ -31,7 +31,7 @@ export { transformToFile } from "./image/encode.js";
 export { parseColor, DEFAULT_QUALITY } from "./image/options.js";
 export type { TransformOptions } from "./image/options.js";
 export type { Mode, SmallInputPolicy, CropPosition, Point, Size } from "./image/geometry.js";
-export type { OutputFormat, FormatOption } from "./image/formats.js";
+export type { OutputFormat, FormatOption, KeepFormat } from "./image/formats.js";
 export type { OnConflict } from "./io/publish.js";
 export type { ProgressEvent, ProgressEventType } from "./pipeline/batch.js";
 

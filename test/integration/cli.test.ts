@@ -32,6 +32,15 @@ describe("CLI", () => {
     expect(await listFiles(path.join(dir, "out"))).toEqual(["a.webp"]);
   });
 
+  it("--keep png,webp --format jpg: PNG giữ PNG, JPG ra JPG; --keep thiếu --format cụ thể → exit 2", async () => {
+    await solid(path.join(dir, "raw", "b.png"), 600, 400, "#336699", "png");
+    const r = await runCli(["resize", "raw", "-s", "128", "--keep", "png,webp", "-f", "jpg", "-o", "out", "--json"], dir);
+    expect(r.code).toBe(0);
+    expect(await listFiles(path.join(dir, "out"))).toEqual(["a.jpg", "b.png"]);
+    expect((await runCli(["resize", "raw", "-s", "128", "--keep", "png", "-o", "out2", "--json"], dir)).code).toBe(2);
+    expect((await runCli(["resize", "raw", "-s", "128", "--keep", "bmp", "-f", "jpg", "-o", "out2", "--json"], dir)).code).toBe(2);
+  });
+
   it("dry-run không ghi", async () => {
     const r = await runCli(["resize", "raw", "-s", "128", "-o", "out", "--dry-run", "--json"], dir);
     expect(r.code).toBe(0);
