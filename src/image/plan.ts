@@ -38,8 +38,7 @@ export function planTransform(src: ProbeResult, opts: TransformOptions): Transfo
   const position: CropPosition = opts.position ?? (opts.focalPoint ? "focal" : "center");
   const small = !allowUp && isSmallInput(source, target, opts.mode);
 
-  let { op, outputSize } = small ? planSmallInput(source, target, opts, policy, position, warnings) : planNormal(source, target, opts, allowUp, position);
-  ({ op, outputSize } = applyBlockMultiple(op, outputSize, source, opts.blockMultiple ?? 1, warnings));
+  const { op, outputSize } = small ? planSmallInput(source, target, opts, policy, position, warnings) : planNormal(source, target, opts, allowUp, position);
 
   const background = resolveBackground(opts, outputFormat, src.hasAlpha || op.kind === "contain", warnings);
   const flatten = outputFormat === "jpg" && src.hasAlpha;
@@ -90,23 +89,6 @@ function planSmallInput(source: Size, target: Size, opts: TransformOptions, poli
   const size = fitInside(source, target, false);
   if (opts.mode === "pad") warnings.push(warning("W_SMALL_INPUT_KEPT", `Ảnh nhỏ hơn target, giữ nguyên ${size.width}×${size.height}, không đệm nền`));
   return { op: { kind: "inside", size }, outputSize: size };
-}
-
-/** Rounds computed sizes DOWN to a multiple (fit / crop-only). cover/pad targets are validated up front. */
-function applyBlockMultiple(op: PlanOp, outputSize: Size, source: Size, bm: number, warnings: Issue[]): Planned {
-  if (bm <= 1) return { op, outputSize };
-  const down = (v: number) => Math.max(bm, Math.floor(v / bm) * bm);
-  if (op.kind === "inside" && (op.size.width % bm !== 0 || op.size.height % bm !== 0)) {
-    const size = { width: down(op.size.width), height: down(op.size.height) };
-    warnings.push(warning("W_BLOCK_ROUNDED", `Làm tròn xuống bội số ${bm}: ${op.size.width}×${op.size.height} → ${size.width}×${size.height}`));
-    return { op: { kind: "inside", size }, outputSize: size };
-  }
-  if (op.kind === "crop-only" && (op.rect.width % bm !== 0 || op.rect.height % bm !== 0)) {
-    const rect = { ...op.rect, width: Math.min(source.width, down(op.rect.width)), height: Math.min(source.height, down(op.rect.height)) };
-    warnings.push(warning("W_BLOCK_ROUNDED", `Làm tròn xuống bội số ${bm}: ${op.rect.width}×${op.rect.height} → ${rect.width}×${rect.height}`));
-    return { op: { ...op, rect }, outputSize: { width: rect.width, height: rect.height } };
-  }
-  return { op, outputSize };
 }
 
 /** Transparent by default; JPG has no alpha, so it gets an opaque background (white unless specified). */

@@ -31,11 +31,6 @@ export interface TransformOptions {
   stripMetadata?: boolean;
   png?: { compressionLevel?: number; palette?: boolean };
   limitInputPixels?: number;
-  /**
-   * Size multiple (e.g. 4 for BC/DXT block-compressed textures). fit: rounded DOWN with a warning;
-   * cover/pad: the target must already be a multiple (preset sizes are never changed implicitly).
-   */
-  blockMultiple?: number;
 }
 
 export interface Rgba {
@@ -69,11 +64,6 @@ export function validateTransformOptions(opts: TransformOptions): void {
   intIn("height", opts.height, 1, 65_535);
   intIn("quality", opts.quality, 1, 100);
   intIn("png.compressionLevel", opts.png?.compressionLevel, 0, 9);
-  intIn("blockMultiple", opts.blockMultiple, 1, 64);
-  const bm = opts.blockMultiple ?? 1;
-  if (bm > 1 && opts.mode !== "fit" && (opts.width % bm !== 0 || opts.height % bm !== 0)) {
-    throw new ImgfitError("E_USAGE", `mode ${opts.mode} với blockMultiple=${bm} cần kích thước là bội số của ${bm}, nhận ${opts.width}×${opts.height}`);
-  }
   if (!["fit", "cover", "pad"].includes(opts.mode)) throw new ImgfitError("E_USAGE", `mode không hợp lệ: ${opts.mode}`);
   if (opts.smallInput && !["error", "keep", "pad"].includes(opts.smallInput)) {
     throw new ImgfitError("E_USAGE", `smallInput không hợp lệ: ${opts.smallInput}`);
@@ -112,6 +102,5 @@ export function effectiveOptions(t: TransformOptions, outputFormat: OutputFormat
     sharpen: t.sharpen,
     stripMetadata: t.stripMetadata ?? true,
     png: t.png,
-    blockMultiple: t.blockMultiple,
   };
 }

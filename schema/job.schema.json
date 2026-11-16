@@ -53,8 +53,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": { "compressionLevel": { "type": "integer", "minimum": 0, "maximum": 9 }, "palette": { "type": "boolean" } }
-          },
-          "blockMultiple": { "type": "integer", "minimum": 1, "maximum": 64 }
+          }
         },
         "anyOf": [{ "required": ["preset"] }, { "required": ["size"] }]
       }

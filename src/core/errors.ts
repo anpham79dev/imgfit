@@ -41,7 +41,6 @@ export const WARNING_CODES = [
   "W_SMALL_INPUT_PADDED",
   "W_SKIP_EXISTING_UNVERIFIED",
   "W_METADATA_KEPT",
-  "W_BLOCK_ROUNDED",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];
