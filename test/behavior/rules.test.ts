@@ -144,6 +144,14 @@ describe("hành vi: màu, nền, metadata", () => {
     expect((await one("static-800x600.gif", { format: "keep" })).f.errors[0]?.code).toBe("E_FORMAT_UNSUPPORTED");
   });
 
+  it("quality JPG mặc định 80 (giống imgproxy)", async () => {
+    const a = await one("landscape-3000x2000.jpg", { width: 640, height: 480 });
+    const b = await one("landscape-3000x2000.jpg", { width: 640, height: 480, quality: 80 });
+    const c = await one("landscape-3000x2000.jpg", { width: 640, height: 480, quality: 85 });
+    expect(Buffer.compare(await readFile(a.file), await readFile(b.file))).toBe(0);
+    expect(Buffer.compare(await readFile(a.file), await readFile(c.file))).not.toBe(0);
+  });
+
   it("JPEG progressive mặc định; jpeg.progressive=false ra baseline", async () => {
     expect((await meta((await one("landscape-3000x2000.jpg", { width: 640, height: 480 })).file)).isProgressive).toBe(true);
     expect((await meta((await one("landscape-3000x2000.jpg", { width: 640, height: 480, jpeg: { progressive: false } })).file)).isProgressive).toBe(false);

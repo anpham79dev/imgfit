@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { versions } from "../version.js";
 
 /** Bump whenever a pipeline change alters output bytes for the same input + options. */
-export const PIPELINE_VERSION = 1;
+export const PIPELINE_VERSION = 2;
 
 /** JSON-serialisable value with object keys sorted and undefined fields dropped. */
 function canonical(value: unknown): unknown {

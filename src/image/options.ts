@@ -5,7 +5,7 @@ import { type CropPosition, type Mode, type Point, SMALL_INPUT_POLICIES, type Sm
 /** Default input pixel limit (≈ 268 MP, same as sharp's default). Guards against decompression bombs. */
 export const DEFAULT_LIMIT_INPUT_PIXELS = 268_402_689;
 
-export const DEFAULT_QUALITY: Record<OutputFormat, number> = { jpg: 85, png: 100, webp: 82, avif: 50 };
+export const DEFAULT_QUALITY: Record<OutputFormat, number> = { jpg: 80, png: 100, webp: 82, avif: 50 };
 
 /** Everything that determines how one image is transformed. */
 export interface TransformOptions {
@@ -13,7 +13,7 @@ export interface TransformOptions {
   height: number;
   mode: Mode;
   format: FormatOption;
-  /** 1–100. Defaults per format (jpg 85, webp 82, avif 50). PNG only uses it with palette=true. */
+  /** 1–100. Defaults per format (jpg 80, webp 82, avif 50). PNG only uses it with palette=true. */
   quality?: number;
   /** Default false: never enlarge small inputs. */
   upscale?: boolean;

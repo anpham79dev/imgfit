@@ -62,7 +62,7 @@ export function registerResize(program: Command, ctx: CliContext): void {
     .addOption(new Option("-m, --mode <mode>", "fit | cover | pad").choices(["fit", "cover", "pad"]).default("fit"))
     .option("-f, --format <format>", "keep | jpg | png | webp | avif", parseFormat, "keep")
     .option("--keep <formats>", "giữ định dạng input nếu nằm trong danh sách (vd. png,webp), ngược lại dùng --format", parseFormatList)
-    .option("-q, --quality <1-100>", "chất lượng encoder (mặc định: jpg 85, webp 82, avif 50)", intArg("quality", 1, 100))
+    .option("-q, --quality <1-100>", "chất lượng encoder (mặc định: jpg 80, webp 82, avif 50)", intArg("quality", 1, 100))
     .option("-n, --name <template>", `template tên output; placeholder {name} {ext} {w} {h} {dir}`, DEFAULT_NAME_TEMPLATE)
     .option("-r, --recursive", "quét cả thư mục con khi input là thư mục", false)
     .addOption(new Option("--position <pos>", "điểm crop cho cover").choices(["center", "top", "attention", "focal"]))
